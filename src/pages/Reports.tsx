@@ -378,39 +378,7 @@ export function Reports() {
               )}
             </div>
 
-            {/* Document Insights Panel */}
-            {['inventory', 'sales', 'purchases'].includes(activeReport) && (
-              <div className="px-8 md:px-16 py-12 bg-[#F8F9F3] border-t-2 border-brass/30 border-dotted mt-auto">
-                <div className="flex items-center gap-3 mb-6">
-                  <Lightbulb size={20} className="text-turmeric" />
-                  <h3 className="font-display text-lg uppercase tracking-wider text-ink">Business Insights</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-stone-light p-6 border border-brass/20 rounded-sm shadow-sm flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-full bg-turmeric/10 flex items-center justify-center shrink-0">
-                      <TrendingUp size={16} className="text-turmeric" />
-                    </div>
-                    <div>
-                      <h4 className="font-sans font-medium text-sm text-ink mb-1">Performance Growth</h4>
-                      <p className="font-sans text-xs text-ink/70 leading-relaxed">
-                        Sales revenue has exceeded the monthly target by 12.5%. Consider restocking high-performing varieties immediately.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-stone-light p-6 border border-brass/20 rounded-sm shadow-sm flex items-start gap-4">
-                    <div className="w-8 h-8 rounded-full bg-ledger-red/10 flex items-center justify-center shrink-0">
-                      <AlertTriangle size={16} className="text-ledger-red" />
-                    </div>
-                    <div>
-                      <h4 className="font-sans font-medium text-sm text-ink mb-1">Critical Stock Warning</h4>
-                      <p className="font-sans text-xs text-ink/70 leading-relaxed">
-                        Sona Masuri stock has dropped below the minimum threshold (1,200kg). Immediate purchase order required.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </motion.div>
         </div>
       </div>
