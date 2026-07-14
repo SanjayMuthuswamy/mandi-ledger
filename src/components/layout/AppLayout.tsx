@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Wheat, Users, ArrowDownToLine, ArrowUpFromLine, Layers, PieChart } from 'lucide-react'
+import { LayoutDashboard, Wheat, Users, ArrowDownToLine, ArrowUpFromLine, Layers, PieChart, LogOut } from 'lucide-react'
 
 function Ticker() {
   return (
     <div className="bg-ink text-stone border-b border-brass flex items-center justify-between px-4 md:px-6 py-4 overflow-hidden">
-      <div className="flex gap-8 md:gap-12 overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full md:w-auto">
+      <div className="flex gap-8 md:gap-12 overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full md:w-auto flex-1">
         <div className="flex flex-col snap-start shrink-0 w-[85vw] md:w-auto">
           <span className="text-[10px] uppercase tracking-widest text-stone/70 mb-1 transform origin-left">Total Rice Stock</span>
           <span className="font-mono text-3xl text-paddy">17,200 <span className="text-sm text-stone/50">kg</span></span>
@@ -22,9 +22,14 @@ function Ticker() {
           <span className="font-mono text-3xl">25,300 <span className="text-sm text-stone/50">kg</span></span>
         </div>
       </div>
-      <div className="text-right hidden md:block shrink-0 pl-4 border-l border-brass/30 ml-4">
-        <div className="font-display text-xl uppercase tracking-tighter text-stone">Mandi Board</div>
-        <div className="font-mono text-xs text-stone/50">v1.0.0</div>
+      <div className="text-right shrink-0 pl-4 border-l border-brass/30 ml-4 flex items-center gap-4">
+        <div className="hidden md:block">
+          <div className="font-display text-xl uppercase tracking-tighter text-stone">Mandi Board</div>
+          <div className="font-mono text-xs text-stone/50">v1.0.0</div>
+        </div>
+        <Link to="/login" className="text-stone hover:text-ledger-red transition-colors md:hidden">
+          <LogOut size={20} />
+        </Link>
       </div>
     </div>
   )
@@ -70,6 +75,12 @@ function LedgerIndex() {
               </Link>
             )
           })}
+        </div>
+        <div className="px-6 pb-4">
+          <Link to="/login" className="py-2 flex items-center gap-3 text-ledger-red/80 hover:text-ledger-red transition-colors">
+            <LogOut size={18} />
+            <span className="font-medium">Logout</span>
+          </Link>
         </div>
       </nav>
 
