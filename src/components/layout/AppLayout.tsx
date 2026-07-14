@@ -51,11 +51,11 @@ function LedgerIndex() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex w-64 border-r border-brass/20 flex-col pt-6 pb-6 h-[calc(100vh-80px)] bg-stone">
-        <div className="px-6 mb-8">
+      <nav className="hidden md:flex w-56 border-r border-brass/20 flex-col pt-8 pb-8 h-[calc(100vh-80px)] bg-stone">
+        <div className="px-8 mb-10">
           <h2 className="font-display text-ink uppercase tracking-tight text-xl drop-shadow-stamp origin-left inline-block">Ledger Index</h2>
         </div>
-        <div className="flex-1 flex flex-col gap-1 pr-4">
+        <div className="flex-1 flex flex-col gap-2">
           {NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path
             return (
@@ -63,22 +63,19 @@ function LedgerIndex() {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "py-3 px-6 relative group transition-colors flex items-center gap-3",
-                  isActive ? "text-ink font-medium" : "text-ink/60 hover:text-ink"
+                  "py-2.5 px-8 relative group transition-all flex items-center gap-4",
+                  isActive ? "text-ink font-display uppercase tracking-widest text-sm" : "text-ink/50 hover:text-ink font-sans text-sm"
                 )}
               >
-                {isActive && (
-                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-turmeric rounded-l-sm" />
-                )}
-                <item.icon size={18} className={isActive ? "text-turmeric" : ""} />
+                <item.icon size={16} className={isActive ? "text-turmeric" : ""} />
                 {item.label}
               </Link>
             )
           })}
         </div>
-        <div className="px-6 pb-4">
-          <Link to="/login" className="py-2 flex items-center gap-3 text-ledger-red/80 hover:text-ledger-red transition-colors">
-            <LogOut size={18} />
+        <div className="px-8 pb-2">
+          <Link to="/login" className="py-2.5 flex items-center gap-4 text-ledger-red/70 hover:text-ledger-red transition-colors font-sans text-sm">
+            <LogOut size={16} />
             <span className="font-medium">Logout</span>
           </Link>
         </div>
