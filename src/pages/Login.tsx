@@ -1,94 +1,221 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
+import { motion } from "framer-motion"
+import { Wheat, User, Lock, Eye, EyeOff, Shield, Loader2, Scale } from "lucide-react"
 
 const loginSchema = z.object({
-  clerkId: z.string().min(1, "Clerk ID is required"),
-  passcode: z.string().min(4, "Passcode must be at least 4 characters")
+  employeeId: z.string().min(1, "Employee ID is required"),
+  password: z.string().min(8, "Password must contain at least 8 characters"),
+  rememberMe: z.boolean().optional()
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
 export function Login() {
   const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [shake, setShake] = useState(false)
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema)
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      employeeId: "",
+      password: "",
+      rememberMe: false
+    }
   })
 
-  const onSubmit = (data: LoginFormValues) => {
-    console.log("Logged in with:", data)
-    navigate('/')
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsSubmitting(true)
+    
+    // Simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    // Hardcoded demo check
+    if (data.employeeId === "admin" && data.password === "password123") {
+      navigate('/')
+    } else {
+      setShake(true)
+      setTimeout(() => setShake(false), 500) // Reset shake
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <div className="min-h-screen flex w-full">
-      {/* Left Panel */}
-      <div className="hidden lg:flex flex-1 bg-ink text-stone flex-col justify-center items-center p-12 relative overflow-hidden">
-        {/* Subtle background texture/pattern */}
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle, #E9EBDF 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-        
-        <div className="relative z-10 text-center">
-          <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tighter drop-shadow-stamp mb-6">
-            Mandi Ledger
-          </h1>
-          <p className="font-sans text-xl text-stone/70 max-w-md mx-auto">
-            Digitized grain inventory. Precision scaled for the modern godown.
-          </p>
-        </div>
-        
-        <div className="absolute bottom-8 left-8 right-8 flex justify-between text-xs font-mono text-stone/40">
-          <span>v1.0.0</span>
-          <span>SYSTEM READY</span>
-        </div>
-      </div>
+    <div className="min-h-screen flex w-full bg-stone font-sans selection:bg-turmeric/30">
+      {/* Global subtle noise background */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-50"
+        style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cfilter id=\"noiseFilter\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23noiseFilter)\"/%3E%3C/svg%3E')" }}
+      />
 
-      {/* Right Panel */}
-      <div className="flex-1 bg-stone flex flex-col justify-center items-center p-8 lg:p-24 relative shadow-[-20px_0_40px_rgba(20,32,26,0.1)]">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden mb-12 text-center">
-            <h1 className="font-display text-4xl uppercase tracking-tighter text-ink drop-shadow-stamp mb-2">
+      {/* Left Panel - Branding (40%) */}
+      <div className="hidden lg:flex w-[40%] bg-ink text-[#F8F9F3] flex-col justify-between p-12 relative overflow-hidden border-r-4 border-brass">
+        {/* Giant Watermark */}
+        <Scale className="absolute -right-20 -bottom-20 w-[600px] h-[600px] text-[#F8F9F3] opacity-5 pointer-events-none" />
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10 mt-12"
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <Wheat className="text-turmeric w-12 h-12" />
+            <h1 className="font-display text-4xl xl:text-5xl uppercase tracking-tight drop-shadow-stamp">
               Mandi Ledger
             </h1>
           </div>
-          
-          <h2 className="font-sans text-2xl font-semibold text-ink mb-8">Access Ledger</h2>
-          
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <label className="font-medium text-sm text-ink block">Clerk ID</label>
-              <Input 
-                type="text" 
-                placeholder="Enter ID" 
-                className="font-mono text-lg h-12"
-                {...register("clerkId")}
-              />
-              {errors.clerkId && <p className="text-ledger-red text-sm font-medium">{errors.clerkId.message}</p>}
-            </div>
-            
-            <div className="space-y-2">
-              <label className="font-medium text-sm text-ink block">Passcode</label>
-              <Input 
-                type="password" 
-                placeholder="••••••••" 
-                className="font-mono text-lg h-12 tracking-widest"
-                {...register("passcode")}
-              />
-              {errors.passcode && <p className="text-ledger-red text-sm font-medium">{errors.passcode.message}</p>}
-            </div>
-            
-            <Button type="submit" className="w-full h-12 text-lg uppercase tracking-wider font-display pt-1">
-              Unlock Ledger
-            </Button>
-            
-            <p className="text-center font-mono text-xs text-ink/50 mt-6">
-              Secure admin access. All activities are logged.
-            </p>
-          </form>
+          <h2 className="font-sans text-xl xl:text-2xl font-medium text-turmeric/90 mb-6">
+            Digital Ledger for Modern Grain Businesses
+          </h2>
+          <p className="font-sans text-[#F8F9F3]/70 text-lg max-w-md leading-relaxed">
+            Manage purchases, sales, inventory, suppliers, and reports with precision and confidence. Built for accountants and warehouse managers.
+          </p>
+        </motion.div>
+        
+        <div className="relative z-10 flex justify-between items-end text-xs font-mono text-[#F8F9F3]/50">
+          <div className="flex flex-col gap-1">
+            <span>© {new Date().getFullYear()} Mandi Ledger</span>
+            <span>All rights reserved.</span>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <span>Version 1.0.0</span>
+            <span>Environment: Production</span>
+          </div>
         </div>
+      </div>
+
+      {/* Right Panel - Login Form (60%) */}
+      <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-12 relative">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-[440px]"
+        >
+          {/* Mobile Header */}
+          <div className="lg:hidden mb-8 text-center flex flex-col items-center gap-3">
+            <Wheat className="text-brass w-12 h-12" />
+            <h1 className="font-display text-4xl uppercase tracking-tighter text-ink drop-shadow-stamp">
+              Mandi Ledger
+            </h1>
+          </div>
+
+          <motion.div 
+            animate={shake ? { x: [-10, 10, -10, 10, 0] } : {}}
+            transition={{ duration: 0.4 }}
+            className="bg-[#F8F9F3] border border-brass/50 rounded-md p-8 lg:p-10 shadow-[4px_4px_0px_0px_rgba(20,32,26,0.1)] relative"
+          >
+            <div className="mb-8">
+              <h2 className="font-display text-2xl uppercase tracking-wider text-ink mb-2">Welcome Back</h2>
+              <p className="font-sans text-sm text-ink/60">Sign in to access your Mandi Ledger workspace.</p>
+            </div>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="font-sans font-medium text-sm text-ink">Employee ID / Email</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink/40" />
+                  <input 
+                    type="text" 
+                    placeholder="e.g. ML-2041" 
+                    disabled={isSubmitting}
+                    className={`w-full h-12 pl-10 pr-4 bg-stone/50 border ${errors.employeeId ? 'border-ledger-red focus:border-ledger-red focus:ring-ledger-red/20' : 'border-brass/30 focus:border-turmeric focus:ring-turmeric/20'} font-mono text-ink text-base rounded-sm focus:outline-none focus:ring-4 transition-all disabled:opacity-50`}
+                    {...register("employeeId")}
+                  />
+                </div>
+                {errors.employeeId && <p className="text-ledger-red text-xs font-medium mt-1">{errors.employeeId.message}</p>}
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="font-sans font-medium text-sm text-ink">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink/40" />
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••••" 
+                    disabled={isSubmitting}
+                    className={`w-full h-12 pl-10 pr-12 bg-stone/50 border ${errors.password ? 'border-ledger-red focus:border-ledger-red focus:ring-ledger-red/20' : 'border-brass/30 focus:border-turmeric focus:ring-turmeric/20'} font-mono text-ink text-base rounded-sm focus:outline-none focus:ring-4 transition-all disabled:opacity-50`}
+                    {...register("password")}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isSubmitting}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink/40 hover:text-ink transition-colors disabled:opacity-50"
+                  >
+                    {showPassword ? <EyeOff w-4 h-4 /> : <Eye w-4 h-4 />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-ledger-red text-xs font-medium mt-1">{errors.password.message}</p>}
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input 
+                    type="checkbox" 
+                    disabled={isSubmitting}
+                    className="w-4 h-4 border-brass/50 rounded-sm text-turmeric focus:ring-turmeric/30 bg-stone/50 cursor-pointer disabled:opacity-50"
+                    {...register("rememberMe")}
+                  />
+                  <span className="text-sm font-sans text-ink/70 group-hover:text-ink transition-colors">Remember me</span>
+                </label>
+                <button type="button" disabled={isSubmitting} className="text-sm font-sans text-ink/70 hover:text-ink hover:underline transition-colors disabled:opacity-50">
+                  Forgot Password?
+                </button>
+              </div>
+              
+              <div className="pt-6">
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full h-14 bg-turmeric text-ink font-display uppercase tracking-widest text-lg pt-1 shadow-[4px_4px_0px_0px_rgba(20,32,26,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(20,32,26,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-80 disabled:pointer-events-none rounded-sm"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin w-5 h-5" />
+                      SIGNING IN...
+                    </>
+                  ) : (
+                    "SIGN IN"
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+
+          <div className="mt-6 flex flex-col items-center gap-6">
+            <div className="flex items-center gap-2 text-ink/60 font-sans text-sm">
+              <Shield className="w-4 h-4 text-paddy" />
+              <span>Your credentials are encrypted and securely transmitted.</span>
+            </div>
+            
+            <div className="flex items-center gap-4 text-xs font-sans text-ink/40 lg:hidden">
+              <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
+              <span>•</span>
+              <a href="#" className="hover:text-ink transition-colors">Terms</a>
+              <span>•</span>
+              <a href="#" className="hover:text-ink transition-colors">Support</a>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Desktop Footer */}
+        <div className="hidden lg:flex absolute bottom-8 right-12 gap-6 text-xs font-sans text-ink/40">
+          <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-ink transition-colors">Terms of Service</a>
+          <a href="#" className="hover:text-ink transition-colors">support@mandiledger.com</a>
+        </div>
+      </div>
+
+      {/* Demo Credentials Alert - For prototype only */}
+      <div className="fixed bottom-4 left-4 bg-[#F8F9F3] border border-brass/30 shadow-md p-3 rounded-sm font-mono text-xs text-ink/70 z-50 pointer-events-none opacity-50">
+        Demo: admin / password123
       </div>
     </div>
   )
