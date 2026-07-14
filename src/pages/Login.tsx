@@ -54,7 +54,7 @@ export function Login() {
       />
 
       {/* Left Panel - Branding (40%) */}
-      <div className="hidden lg:flex w-[40%] bg-ink text-[#F8F9F3] flex-col justify-between p-12 relative overflow-hidden border-r-4 border-brass">
+      <div className="hidden md:flex w-[40%] bg-ink text-[#F8F9F3] flex-col justify-between p-8 xl:p-12 relative overflow-hidden border-r-4 border-brass">
         {/* Giant Watermark */}
         <Scale className="absolute -right-20 -bottom-20 w-[600px] h-[600px] text-[#F8F9F3] opacity-5 pointer-events-none" />
         
@@ -91,7 +91,7 @@ export function Login() {
       </div>
 
       {/* Right Panel - Login Form (60%) */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-12 relative">
+      <div className="flex-1 flex flex-col justify-center items-center p-4 md:p-8 xl:p-12 relative overflow-y-auto">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -99,7 +99,7 @@ export function Login() {
           className="w-full max-w-[440px]"
         >
           {/* Mobile Header */}
-          <div className="lg:hidden mb-8 text-center flex flex-col items-center gap-3">
+          <div className="md:hidden mb-6 text-center flex flex-col items-center gap-2">
             <Wheat className="text-brass w-12 h-12" />
             <h1 className="font-display text-4xl uppercase tracking-tighter text-ink drop-shadow-stamp">
               Mandi Ledger
@@ -109,7 +109,7 @@ export function Login() {
           <motion.div 
             animate={shake ? { x: [-10, 10, -10, 10, 0] } : {}}
             transition={{ duration: 0.4 }}
-            className="bg-[#F8F9F3] border border-brass/50 rounded-md p-8 lg:p-10 shadow-[4px_4px_0px_0px_rgba(20,32,26,0.1)] relative"
+            className="bg-[#F8F9F3] border border-brass/50 rounded-md p-6 sm:p-8 md:p-10 shadow-[4px_4px_0px_0px_rgba(20,32,26,0.1)] relative"
           >
             <div className="mb-8">
               <h2 className="font-display text-2xl uppercase tracking-wider text-ink mb-2">Welcome Back</h2>
@@ -189,13 +189,13 @@ export function Login() {
             </form>
           </motion.div>
 
-          <div className="mt-6 flex flex-col items-center gap-6">
-            <div className="flex items-center gap-2 text-ink/60 font-sans text-sm">
-              <Shield className="w-4 h-4 text-paddy" />
+          <div className="mt-6 flex flex-col items-center gap-6 pb-8 md:pb-0">
+            <div className="flex items-center justify-center gap-2 text-ink/60 font-sans text-xs sm:text-sm text-center px-4">
+              <Shield className="w-4 h-4 text-paddy shrink-0" />
               <span>Your credentials are encrypted and securely transmitted.</span>
             </div>
             
-            <div className="flex items-center gap-4 text-xs font-sans text-ink/40 lg:hidden">
+            <div className="flex items-center gap-4 text-xs font-sans text-ink/40 md:hidden flex-wrap justify-center">
               <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
               <span>•</span>
               <a href="#" className="hover:text-ink transition-colors">Terms</a>
@@ -206,7 +206,7 @@ export function Login() {
         </motion.div>
 
         {/* Desktop Footer */}
-        <div className="hidden lg:flex absolute bottom-8 right-12 gap-6 text-xs font-sans text-ink/40">
+        <div className="hidden md:flex absolute bottom-6 right-8 gap-6 text-xs font-sans text-ink/40">
           <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-ink transition-colors">Terms of Service</a>
           <a href="#" className="hover:text-ink transition-colors">support@mandiledger.com</a>
@@ -214,7 +214,7 @@ export function Login() {
       </div>
 
       {/* Demo Credentials Alert - For prototype only */}
-      <div className="fixed bottom-4 left-4 bg-[#F8F9F3] border border-brass/30 shadow-md p-3 rounded-sm font-mono text-xs text-ink/70 z-50 pointer-events-none opacity-50">
+      <div className="fixed bottom-2 left-2 md:bottom-4 md:left-4 bg-[#F8F9F3] border border-brass/30 shadow-md p-2 md:p-3 rounded-sm font-mono text-[10px] md:text-xs text-ink/70 z-50 pointer-events-none opacity-50">
         Demo: admin / password123
       </div>
     </div>

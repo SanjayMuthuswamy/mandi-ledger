@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------
+// User & Auth Module
+// ------------------------------------------------------
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  roleId       String
+  isActive     Boolean   @default(true)
+  
+  // Audit Context
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  createdBy    String?
+  updatedBy    String?
+
+  role         Role      @relation(fields: [roleId], references: [id])
+  sessions     Session[]
+
+  @@index([email])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // Admin, Manager, Accountant, etc.
+  permissions String[] // JSON array of permissions e.g., ["inventory:read", "purchase:write"]
+  
+  users       User[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  deviceInfo   String?
+  isRevoked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// ------------------------------------------------------
+// Inventory Module
+// ------------------------------------------------------
+
+model Warehouse {
+  id          String   @id @default(uuid())
+  name        String
+  location    String?
+  capacity    Float?   // in kg
+  
+  stocks      Stock[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+}
+
+model RiceVariety {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  basePrice   Float    // Default selling price per kg
+
+  stocks      Stock[]
+  purchases   PurchaseItem[]
+  sales       SaleItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+}
+
+model Stock {
+  id              String      @id @default(uuid())
+  warehouseId     String
+  riceVarietyId   String
+  quantity        Float       // Current quantity in kg
+  minThreshold    Float       // Alert threshold
+  maxCapacity     Float?
+  
+  // Relations
+  warehouse       Warehouse   @relation(fields: [warehouseId], references: [id])
+  variety         RiceVariety @relation(fields: [riceVarietyId], references: [id])
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([warehouseId, riceVarietyId])
+}
+
+// ------------------------------------------------------
+// Purchase Module
+// ------------------------------------------------------
+
+model Supplier {
+  id          String   @id @default(uuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  gstNumber   String?
+  rating      Float?   // 1 to 5
+  
+  purchases   Purchase[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+}
+
+model Purchase {
+  id            String    @id @default(uuid())
+  entryNo       String    @unique
+  supplierId    String
+  purchaseDate  DateTime
+  totalAmount   Float
+  paymentStatus PaymentStatus @default(PENDING)
+  invoiceDoc    String?
+  
+  supplier      Supplier       @relation(fields: [supplierId], references: [id])
+  items         PurchaseItem[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  createdBy     String?
+
+  @@index([supplierId])
+  @@index([purchaseDate])
+}
+
+model PurchaseItem {
+  id            String      @id @default(uuid())
+  purchaseId    String
+  riceVarietyId String
+  quantity      Float
+  rate          Float
+  total         Float
+
+  purchase      Purchase    @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  variety       RiceVariety @relation(fields: [riceVarietyId], references: [id])
+
+  createdAt     DateTime    @default(now())
+}
+
+// ------------------------------------------------------
+// Sales Module
+// ------------------------------------------------------
+
+model Customer {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  gstNumber   String?
+  
+  sales       Sale[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+}
+
+model Sale {
+  id            String    @id @default(uuid())
+  invoiceNo     String    @unique
+  customerId    String
+  saleDate      DateTime
+  totalAmount   Float
+  paymentStatus PaymentStatus @default(PENDING)
+  
+  customer      Customer   @relation(fields: [customerId], references: [id])
+  items         SaleItem[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  createdBy     String?
+
+  @@index([customerId])
+  @@index([saleDate])
+}
+
+model SaleItem {
+  id            String      @id @default(uuid())
+  saleId        String
+  riceVarietyId String
+  quantity      Float
+  rate          Float
+  total         Float
+
+  sale          Sale        @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  variety       RiceVariety @relation(fields: [riceVarietyId], references: [id])
+
+  createdAt     DateTime    @default(now())
+}
+
+// ------------------------------------------------------
+// Audit System
+// ------------------------------------------------------
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String   // e.g. "PURCHASE_CREATED", "STOCK_MODIFIED"
+  entityType  String   // e.g. "Purchase", "Stock"
+  entityId    String
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  deviceInfo  String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
