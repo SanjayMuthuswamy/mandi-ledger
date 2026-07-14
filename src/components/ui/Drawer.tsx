@@ -26,7 +26,7 @@ export function Drawer({ isOpen, onClose, title, children }: DrawerProps) {
             animate={{ y: 0, x: 0 }}
             exit={{ y: "100%", x: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-x-0 bottom-0 top-16 md:inset-y-0 md:left-auto md:right-0 md:top-0 w-full md:max-w-md bg-stone-light border-t-2 md:border-t-0 md:border-l-2 border-brass/50 shadow-2xl z-50 flex flex-col rounded-t-2xl md:rounded-t-none"
+            className="fixed inset-x-0 bottom-0 top-16 md:inset-y-0 md:left-auto md:right-0 md:top-0 w-full md:max-w-md bg-[#F8F9F3] border-t-2 md:border-t-0 md:border-l-2 border-brass/50 shadow-2xl z-50 flex flex-col rounded-t-2xl md:rounded-t-none"
           >
             <div className="flex items-center justify-between p-6 border-b border-brass/20">
               <h2 className="font-display text-xl md:text-2xl uppercase tracking-tight text-ink drop-shadow-stamp">{title}</h2>
