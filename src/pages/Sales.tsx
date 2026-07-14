@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
 import { Input } from "@/components/ui/Input"
 import { useStock } from "@/data/useStock"
-import { Plus } from "lucide-react"
+import { Plus, ShoppingCart } from "lucide-react"
 
 export function Sales() {
   const { stock, updateQuantity } = useStock()
@@ -110,8 +110,8 @@ export function Sales() {
         </div>
 
         {/* Desktop Table */}
-        <table className="hidden md:table w-full text-left text-sm">
-          <thead className="border-b border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
+        <table className="hidden md:table w-full text-left text-sm border-collapse">
+          <thead className="border-b-2 border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
             <tr>
               <th className="p-4 w-24">Entry No.</th>
               <th className="p-4">Date</th>
@@ -122,9 +122,9 @@ export function Sales() {
               <th className="p-4 text-right">Total (₹)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-brass/10 font-mono">
+          <tbody>
             {sales.map((sale) => (
-              <tr key={sale.id} className="hover:bg-ink/5 transition-colors">
+              <tr key={sale.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
                 <td className="p-4 text-ink font-bold">{sale.entryNo}</td>
                 <td className="p-4 text-ink/70">{sale.date}</td>
                 <td className="p-4 font-sans text-ink">{sale.customer}</td>
@@ -139,8 +139,11 @@ export function Sales() {
             ))}
             {sales.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center font-sans text-ink/70">
-                  No sales logged yet — record your first dispatch to start the ledger.
+                <td colSpan={7}>
+                  <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
+                    <ShoppingCart size={48} className="text-brass/20" />
+                    <p className="font-sans">No sales recorded today. Create your first invoice.</p>
+                  </div>
                 </td>
               </tr>
             )}

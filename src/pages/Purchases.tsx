@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
 import { Input } from "@/components/ui/Input"
 import { useStock } from "@/data/useStock"
-import { Plus } from "lucide-react"
+import { Plus, Wheat } from "lucide-react"
 
 export function Purchases() {
   const { stock, updateQuantity } = useStock()
@@ -95,15 +95,18 @@ export function Purchases() {
             </div>
           ))}
           {purchases.length === 0 && (
-            <div className="p-8 text-center font-sans text-ink/70 border border-brass/30 bg-stone-light">
-              No purchases logged yet.
+            <div className="p-12 text-center flex flex-col items-center justify-center gap-4 bg-stone border border-brass/20">
+              <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center">
+                <Wheat size={32} className="text-brass/40" />
+              </div>
+              <p className="font-sans text-ink/60 font-medium">No purchases logged yet.</p>
             </div>
           )}
         </div>
 
         {/* Desktop Table */}
-        <table className="hidden md:table w-full text-left text-sm">
-          <thead className="border-b border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
+        <table className="hidden md:table w-full text-left text-sm border-collapse">
+          <thead className="border-b-2 border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
             <tr>
               <th className="p-4 w-24">Entry No.</th>
               <th className="p-4">Date</th>
@@ -114,9 +117,9 @@ export function Purchases() {
               <th className="p-4 text-right">Total (₹)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-brass/10 font-mono">
+          <tbody>
             {purchases.map((purchase) => (
-              <tr key={purchase.id} className="hover:bg-ink/5 transition-colors">
+              <tr key={purchase.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30">
                 <td className="p-4 text-ink font-bold">{purchase.entryNo}</td>
                 <td className="p-4 text-ink/70">{purchase.date}</td>
                 <td className="p-4 font-sans text-ink">{purchase.supplier}</td>
@@ -131,8 +134,11 @@ export function Purchases() {
             ))}
             {purchases.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center font-sans text-ink/70">
-                  No purchases logged yet — record your first delivery to start the ledger.
+                <td colSpan={7}>
+                  <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
+                    <Wheat size={48} className="text-brass/20" />
+                    <p className="font-sans">No purchases recorded today. Record today's first purchase.</p>
+                  </div>
                 </td>
               </tr>
             )}
