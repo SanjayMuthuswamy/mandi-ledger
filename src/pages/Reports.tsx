@@ -7,6 +7,7 @@ import { Calendar, Download, Printer, TrendingUp, TrendingDown, Package, Shoppin
 export function Reports() {
   const { stock } = useStock()
   const [activeTab, setActiveTab] = useState<'inventory' | 'sales' | 'purchases' | 'financial'>('inventory')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Mock data for KPI
   const kpis = [
@@ -27,6 +28,12 @@ export function Reports() {
     { id: '1', date: '2026-07-12', entry: 'P-1042', supplier: 'Rajesh Traders', variety: 'Ponni Boiled', qty: 4500, rate: 42, amount: 189000, status: 'Paid' },
     { id: '2', date: '2026-07-10', entry: 'P-1041', supplier: 'Sri Balaji Agro', variety: 'Sona Masuri', qty: 1200, rate: 54, amount: 64800, status: 'Paid' },
   ]
+
+  // Filter Data
+  const q = searchQuery.toLowerCase()
+  const filteredStock = stock.filter(s => s.varietyName.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))
+  const filteredSales = sales.filter(s => s.invoice.toLowerCase().includes(q) || s.customer.toLowerCase().includes(q) || s.variety.toLowerCase().includes(q))
+  const filteredPurchases = purchases.filter(p => p.entry.toLowerCase().includes(q) || p.supplier.toLowerCase().includes(q) || p.variety.toLowerCase().includes(q))
 
   return (
     <div className="flex flex-col gap-8 pb-12">
@@ -76,7 +83,7 @@ export function Reports() {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => { setActiveTab(tab.id as any); setSearchQuery(''); }}
             className={`flex items-center gap-2 px-6 py-3 font-display uppercase tracking-wider text-sm transition-colors whitespace-nowrap border-b-2 -mb-[2px] ${activeTab === tab.id ? 'border-ink text-ink bg-ink/5' : 'border-transparent text-ink/60 hover:bg-ink/5 hover:text-ink'}`}
           >
             <tab.icon size={16} />
@@ -92,7 +99,13 @@ export function Reports() {
         <div className="p-4 border-b border-brass/20 flex flex-col md:flex-row gap-4 justify-between bg-[#F8F9F3] sticky top-0 z-10 hidden md:flex">
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" size={16} />
-            <input type="text" placeholder={`Search ${activeTab}...`} className="w-full pl-9 pr-4 py-2 bg-stone border border-brass/30 text-sm font-sans focus:outline-none focus:border-turmeric" />
+            <input 
+              type="text" 
+              placeholder={`Search ${activeTab}...`} 
+              className="w-full pl-9 pr-4 py-2 bg-stone border border-brass/30 text-sm font-sans focus:outline-none focus:border-turmeric" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <Button variant="ghost" className="border border-brass/30 text-xs gap-2"><FileText size={14}/> Filters</Button>
         </div>
@@ -101,7 +114,13 @@ export function Reports() {
         <div className="md:hidden flex gap-2 p-2 bg-stone sticky top-16 z-20 shadow-sm border-b border-brass/20">
            <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" size={14} />
-            <input type="text" placeholder="Search..." className="w-full pl-8 pr-4 py-2 bg-stone-light border border-brass/30 text-xs font-sans focus:outline-none focus:border-turmeric" />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              className="w-full pl-8 pr-4 py-2 bg-stone-light border border-brass/30 text-xs font-sans focus:outline-none focus:border-turmeric" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <button className="px-4 bg-stone-light border border-brass/30 text-xs uppercase tracking-wider flex items-center justify-center shadow-sm">Filter</button>
         </div>
@@ -109,7 +128,7 @@ export function Reports() {
         {/* Mobile Ledger Cards */}
         <div className="md:hidden flex flex-col gap-4 bg-stone pb-4 pt-4 px-2">
           
-          {activeTab === 'inventory' && stock.map(item => (
+          {activeTab === 'inventory' && filteredStock.map(item => (
             <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
               <div className="flex justify-between items-start border-b border-brass/10 pb-2">
                 <div className="font-sans font-medium text-ink flex items-center gap-2">
@@ -135,7 +154,7 @@ export function Reports() {
             </div>
           ))}
 
-          {activeTab === 'sales' && sales.map(item => (
+          {activeTab === 'sales' && filteredSales.map(item => (
             <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
               <div className="flex justify-between items-start border-b border-brass/10 pb-2">
                 <div>
@@ -159,7 +178,7 @@ export function Reports() {
             </div>
           ))}
 
-          {activeTab === 'purchases' && purchases.map(item => (
+          {activeTab === 'purchases' && filteredPurchases.map(item => (
             <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
               <div className="flex justify-between items-start border-b border-brass/10 pb-2">
                 <div>
@@ -207,7 +226,7 @@ export function Reports() {
                 </tr>
               </thead>
               <tbody>
-                {stock.map(item => (
+                {filteredStock.map(item => (
                   <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
                     <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full bg-variety-${item.varietyId}`} />
@@ -243,7 +262,7 @@ export function Reports() {
                 </tr>
               </thead>
               <tbody>
-                {sales.map(item => (
+                {filteredSales.map(item => (
                   <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
                     <td className="p-4 text-ink font-bold">{item.invoice}</td>
                     <td className="p-4 text-ink/70">{item.date}</td>
@@ -256,7 +275,7 @@ export function Reports() {
                     </td>
                   </tr>
                 ))}
-                {sales.length === 0 && (
+                {filteredSales.length === 0 && (
                   <tr>
                     <td colSpan={7}>
                       <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
@@ -284,7 +303,7 @@ export function Reports() {
                </tr>
              </thead>
              <tbody>
-               {purchases.map(item => (
+               {filteredPurchases.map(item => (
                  <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
                    <td className="p-4 text-ink font-bold">{item.entry}</td>
                    <td className="p-4 text-ink/70">{item.date}</td>
