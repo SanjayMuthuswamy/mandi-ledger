@@ -137,15 +137,15 @@ export function Reports() {
         {/* 4. Main Workspace (Document Viewer) */}
         <div className="flex-1 w-full flex flex-col items-center">
           
-          <motion.div 
-            key={activeReport}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-[1000px] bg-[#F8F9F3] border border-brass/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-[800px] relative overflow-hidden"
-          >
+            <motion.div 
+              key={activeReport}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-[1000px] bg-[#F8F9F3] border border-brass/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-[500px] relative overflow-hidden"
+            >
             {/* Document Header */}
-            <div className="px-8 md:px-16 pt-16 pb-8 border-b-2 border-brass/20 border-dotted">
+            <div className="px-8 md:px-12 pt-12 pb-8 border-b-2 border-brass/20 border-dotted">
               <div className="flex items-start justify-between mb-8">
                 <div>
                   <h2 className="font-display text-3xl uppercase tracking-tighter text-ink mb-3">{activeReportData?.label}</h2>
@@ -182,7 +182,7 @@ export function Reports() {
             </div>
 
             {/* Document Toolbar */}
-            <div className="px-4 md:px-16 py-4 bg-ink/[0.02] border-b border-brass/20 flex flex-col md:flex-row gap-4 justify-between items-center sticky top-0 z-10">
+            <div className="px-6 md:px-8 py-4 bg-ink/[0.02] border-b border-brass/20 flex flex-col md:flex-row gap-4 justify-between items-center sticky top-0 z-10">
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" size={14} />
@@ -226,7 +226,7 @@ export function Reports() {
                   exit={{ height: 0, opacity: 0 }}
                   className="bg-[#F8F9F3] border-b border-brass/20 overflow-hidden"
                 >
-                  <div className="px-8 md:px-16 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="px-8 md:px-12 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="flex flex-col gap-2">
                       <label className="text-xs font-sans font-medium text-ink/60">Rice Variety</label>
                       <select className="w-full p-2 bg-stone-light border border-brass/30 text-xs font-sans rounded-sm focus:outline-none">
@@ -266,23 +266,23 @@ export function Reports() {
                 <table className="w-full text-left text-sm border-collapse min-w-[800px]">
                   <thead className="bg-[#F8F9F3] border-b-2 border-brass/40 font-display uppercase tracking-widest text-ink/60 text-[11px]">
                     <tr>
-                      <th className="px-8 md:px-16 py-6 font-medium">Variety</th>
-                      <th className="px-6 py-6 font-medium text-right">Available Stock</th>
-                      <th className="px-6 py-6 font-medium text-right">Min Level</th>
-                      <th className="px-6 py-6 font-medium text-center">Status</th>
-                      <th className="px-8 md:px-16 py-6 font-medium text-right">Stock Value</th>
+                      <th className="px-6 md:px-8 py-6 font-medium">Variety</th>
+                      <th className="px-4 py-6 font-medium text-right">Available Stock</th>
+                      <th className="px-4 py-6 font-medium text-right">Min Level</th>
+                      <th className="px-4 py-6 font-medium text-center">Status</th>
+                      <th className="px-6 md:px-8 py-6 font-medium text-right">Stock Value</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stock.map(item => (
                       <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/[0.02] transition-colors font-mono even:bg-stone/20">
-                        <td className="px-8 md:px-16 py-5 font-sans font-medium text-ink/90 flex items-center gap-3">
+                        <td className="px-6 md:px-8 py-5 font-sans font-medium text-ink/90 flex items-center gap-3">
                           <div className={`w-2.5 h-2.5 rounded-full bg-variety-${item.varietyId} shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]`} />
                           {item.varietyName}
                         </td>
-                        <td className="px-6 py-5 text-right text-ink tabular-nums">{item.quantity.toLocaleString()} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
-                        <td className="px-6 py-5 text-right text-ink/50 tabular-nums">{item.threshold.toLocaleString()} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
-                        <td className="px-6 py-5 text-center">
+                        <td className="px-4 py-5 text-right text-ink tabular-nums">{item.quantity.toLocaleString()} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
+                        <td className="px-4 py-5 text-right text-ink/50 tabular-nums">{item.threshold.toLocaleString()} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
+                        <td className="px-4 py-5 text-center">
                           {item.quantity < item.threshold ? (
                             <span className="text-ledger-red text-[10px] bg-transparent px-0 font-sans uppercase tracking-widest font-bold flex items-center justify-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-ledger-red animate-pulse"/> Low
@@ -293,7 +293,7 @@ export function Reports() {
                             </span>
                           )}
                         </td>
-                        <td className="px-8 md:px-16 py-5 text-right tabular-nums text-ink font-medium">₹{(item.quantity * item.price).toLocaleString()}</td>
+                        <td className="px-6 md:px-8 py-5 text-right tabular-nums text-ink font-medium">₹{(item.quantity * item.price).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -304,25 +304,25 @@ export function Reports() {
                 <table className="w-full text-left text-sm border-collapse min-w-[800px]">
                   <thead className="bg-[#F8F9F3] border-b-2 border-brass/40 font-display uppercase tracking-widest text-ink/60 text-[11px]">
                     <tr>
-                      <th className="px-8 md:px-16 py-6 font-medium">Invoice No</th>
-                      <th className="px-6 py-6 font-medium">Date</th>
-                      <th className="px-6 py-6 font-medium">Customer</th>
-                      <th className="px-6 py-6 font-medium">Variety</th>
-                      <th className="px-6 py-6 font-medium text-right">Qty</th>
-                      <th className="px-6 py-6 font-medium text-right">Amount</th>
-                      <th className="px-8 md:px-16 py-6 font-medium text-center">Status</th>
+                      <th className="px-6 md:px-8 py-6 font-medium">Invoice No</th>
+                      <th className="px-4 py-6 font-medium whitespace-nowrap">Date</th>
+                      <th className="px-4 py-6 font-medium">Customer</th>
+                      <th className="px-4 py-6 font-medium">Variety</th>
+                      <th className="px-4 py-6 font-medium text-right">Qty</th>
+                      <th className="px-4 py-6 font-medium text-right">Amount</th>
+                      <th className="px-6 md:px-8 py-6 font-medium text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sales.map(item => (
                       <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/[0.02] transition-colors font-mono even:bg-stone/20">
-                        <td className="px-8 md:px-16 py-5 text-ink font-bold">{item.invoice}</td>
-                        <td className="px-6 py-5 text-ink/60 tabular-nums">{item.date}</td>
-                        <td className="px-6 py-5 font-sans text-ink/90">{item.customer}</td>
-                        <td className="px-6 py-5 font-sans text-ink/60">{item.variety}</td>
-                        <td className="px-6 py-5 text-right tabular-nums text-ink">{item.qty} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
-                        <td className="px-6 py-5 text-right font-medium text-ink tabular-nums">₹{item.amount.toLocaleString()}</td>
-                        <td className="px-8 md:px-16 py-5 text-center">
+                        <td className="px-6 md:px-8 py-5 text-ink font-bold whitespace-nowrap">{item.invoice}</td>
+                        <td className="px-4 py-5 text-ink/60 tabular-nums whitespace-nowrap">{item.date}</td>
+                        <td className="px-4 py-5 font-sans text-ink/90">{item.customer}</td>
+                        <td className="px-4 py-5 font-sans text-ink/60">{item.variety}</td>
+                        <td className="px-4 py-5 text-right tabular-nums text-ink whitespace-nowrap">{item.qty} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
+                        <td className="px-4 py-5 text-right font-medium text-ink tabular-nums whitespace-nowrap">₹{item.amount.toLocaleString()}</td>
+                        <td className="px-6 md:px-8 py-5 text-center">
                            <span className={`text-[10px] font-sans uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 ${item.status === 'Paid' ? 'text-paddy' : 'text-turmeric'}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'Paid' ? 'bg-paddy' : 'bg-turmeric'}`}/> {item.status}
                            </span>
@@ -337,25 +337,25 @@ export function Reports() {
                 <table className="w-full text-left text-sm border-collapse min-w-[800px]">
                   <thead className="bg-[#F8F9F3] border-b-2 border-brass/40 font-display uppercase tracking-widest text-ink/60 text-[11px]">
                     <tr>
-                      <th className="px-8 md:px-16 py-6 font-medium">Entry No</th>
-                      <th className="px-6 py-6 font-medium">Date</th>
-                      <th className="px-6 py-6 font-medium">Supplier</th>
-                      <th className="px-6 py-6 font-medium">Variety</th>
-                      <th className="px-6 py-6 font-medium text-right">Qty</th>
-                      <th className="px-6 py-6 font-medium text-right">Total</th>
-                      <th className="px-8 md:px-16 py-6 font-medium text-center">Status</th>
+                      <th className="px-6 md:px-8 py-6 font-medium">Entry No</th>
+                      <th className="px-4 py-6 font-medium whitespace-nowrap">Date</th>
+                      <th className="px-4 py-6 font-medium">Supplier</th>
+                      <th className="px-4 py-6 font-medium">Variety</th>
+                      <th className="px-4 py-6 font-medium text-right">Qty</th>
+                      <th className="px-4 py-6 font-medium text-right">Total</th>
+                      <th className="px-6 md:px-8 py-6 font-medium text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {purchases.map(item => (
                       <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/[0.02] transition-colors font-mono even:bg-stone/20">
-                        <td className="px-8 md:px-16 py-5 text-ink font-bold">{item.entry}</td>
-                        <td className="px-6 py-5 text-ink/60 tabular-nums">{item.date}</td>
-                        <td className="px-6 py-5 font-sans text-ink/90">{item.supplier}</td>
-                        <td className="px-6 py-5 font-sans text-ink/60">{item.variety}</td>
-                        <td className="px-6 py-5 text-right tabular-nums text-ink">{item.qty} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
-                        <td className="px-6 py-5 text-right font-medium text-ink tabular-nums">₹{item.amount.toLocaleString()}</td>
-                        <td className="px-8 md:px-16 py-5 text-center">
+                        <td className="px-6 md:px-8 py-5 text-ink font-bold whitespace-nowrap">{item.entry}</td>
+                        <td className="px-4 py-5 text-ink/60 tabular-nums whitespace-nowrap">{item.date}</td>
+                        <td className="px-4 py-5 font-sans text-ink/90">{item.supplier}</td>
+                        <td className="px-4 py-5 font-sans text-ink/60">{item.variety}</td>
+                        <td className="px-4 py-5 text-right tabular-nums text-ink whitespace-nowrap">{item.qty} <span className="text-xs text-ink/40 ml-1 font-sans">kg</span></td>
+                        <td className="px-4 py-5 text-right font-medium text-ink tabular-nums whitespace-nowrap">₹{item.amount.toLocaleString()}</td>
+                        <td className="px-6 md:px-8 py-5 text-center">
                            <span className={`text-[10px] font-sans uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 ${item.status === 'Paid' ? 'text-paddy' : 'text-turmeric'}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'Paid' ? 'bg-paddy' : 'bg-turmeric'}`}/> {item.status}
                            </span>

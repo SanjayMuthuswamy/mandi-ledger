@@ -51,7 +51,7 @@ function LedgerIndex() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex w-56 border-r border-brass/20 flex-col pt-8 pb-8 h-[calc(100vh-80px)] bg-stone">
+      <nav className="hidden md:flex w-56 border-r border-brass/20 flex-col pt-8 pb-8 h-full bg-stone overflow-y-auto hide-scrollbar">
         <div className="px-8 mb-10">
           <h2 className="font-display text-ink uppercase tracking-tight text-xl drop-shadow-stamp origin-left inline-block">Ledger Index</h2>
         </div>
@@ -114,7 +114,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (location.pathname === '/login') return <>{children}</>
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone">
+    <div className="h-screen w-full flex flex-col bg-stone overflow-hidden">
       <Ticker />
       <div className="flex flex-1 overflow-hidden">
         <LedgerIndex />
