@@ -1,25 +1,33 @@
-# Mandi Ledger
+# Mandi Ledger (v1.1.0)
 
-A production-grade, ledger-inspired stock management system tailored specifically for a grain mandi (market). Built with React, Tailwind CSS, and Framer Motion, this system abandons generic SaaS templates in favor of a bespoke, physical-ledger aesthetic characterized by stamped typography, brass hairlines, and variety-specific grain tracking.
+A production-grade, ledger-inspired ERP and stock management system tailored specifically for a grain mandi (market) and warehouse operations. Built with React, Tailwind CSS, Node.js, and PostgreSQL, this system abandons generic SaaS templates in favor of a bespoke, physical-ledger aesthetic characterized by stamped typography, brass hairlines, and variety-specific grain tracking.
 
 ## 🌾 Features
 
+- **Enterprise Document Viewer (Reports):** A completely bespoke reporting workspace that acts like a printed physical ledger, complete with a sticky report library, data insights, and right-aligned tabular financial data.
+- **Industrial Login Portal:** A robust, split-pane login interface featuring paper textures, watermark branding, shake-animations for invalid credentials, and standard JWT-ready inputs.
 - **Mandi Board Ticker:** A horizontally swipeable snapshot of core metrics (Total Stock, Purchases, Sales) designed to resemble a mechanical count-up board.
-- **Grain Gauge Matrix:** A custom UI component using dot-textured patterns (mimicking grain) to visualize stock levels across different rice varieties. Features dynamic pulsing when stock drops below designated thresholds.
-- **Ledger-Style Index:** Navigation built to resemble physical ledger tabs.
+- **Ledger-Style Index:** Navigation built to resemble physical ledger tabs that strictly lock to the viewport without detaching.
 - **Unified CRUD Workflows:** Symmetrical, non-obtrusive bottom-sheet drawers (on mobile) and right-side slide-outs (on desktop) for Purchases, Sales, and Stock adjustments.
 - **Mobile-First Data Density:** Data tables adapt to stacked "Ledger Cards" on mobile devices to prevent horizontal squeezing and preserve tabular alignment.
-- **Responsive Trend Reporting:** Recharts integration rendering vertical bars on desktop and horizontal bars on mobile for optimal legibility of long variety names.
 
 ## 🛠 Tech Stack
 
+### Frontend
 - **Framework:** React 18 (Vite)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS (Custom Color System + No default styles)
 - **Animation:** Framer Motion
-- **Forms & Validation:** React Hook Form + Zod
-- **Data Visualization:** Recharts
 - **Icons:** Lucide React
+
+### Backend (API)
+- **Runtime:** Node.js LTS
+- **Framework:** Express.js
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Authentication:** JWT & bcrypt
+- **Logging:** Pino
+- **Validation:** Zod
 
 ## 🎨 Design System: "Ledger Noir"
 
@@ -36,33 +44,48 @@ The application uses a strict 6-token color palette:
 
 ### Prerequisites
 - Node.js (v18 or higher)
+- PostgreSQL Database
 - npm or yarn
 
-### Installation
+### Installation (Frontend)
 1. Clone the repository
-2. Install dependencies:
+2. Install frontend dependencies:
    ```bash
    npm install
    ```
-3. Start the development server:
+3. Start the Vite development server:
    ```bash
    npm run dev
    ```
-4. Build for production:
+
+### Installation (Backend)
+1. Navigate to the backend directory:
    ```bash
-   npm run build
+   cd backend
+   ```
+2. Install backend dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up your `.env` file with your `DATABASE_URL` and `JWT_SECRET`.
+4. Run Prisma Migrations:
+   ```bash
+   npx prisma migrate dev
    ```
 
 ## 📂 Project Structure
 
 ```text
-src/
-├── components/
-│   ├── layout/       # App layout, Ticker, and Ledger Index navigation
-│   └── ui/           # Reusable branded components (GrainGauge, StampHeader, Drawer, etc.)
-├── data/             # State management and mock API hooks (useStock)
-├── pages/            # Core views (Dashboard, Stock, Purchases, Sales, Suppliers, Reports)
-└── lib/              # Utility functions
+mandi-ledger/
+├── backend/          # Express API, Prisma Schema, Auth, and Audit Services
+├── src/
+│   ├── components/
+│   │   ├── layout/   # App layout, Ticker, and Ledger Index navigation
+│   │   └── ui/       # Reusable branded components (StampHeader, Drawer, etc.)
+│   ├── data/         # State management and mock API hooks (useStock)
+│   ├── pages/        # Core views (Dashboard, Stock, Purchases, Sales, Reports, Login)
+│   └── lib/          # Utility functions
+└── README.md
 ```
 
 ## 📝 License
