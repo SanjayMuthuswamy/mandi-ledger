@@ -12,10 +12,10 @@ declare global {
 function createClient(): PrismaClient {
   const url = process.env['DATABASE_URL']!
 
-  // Use pg adapter for direct postgres:// connections (local dev server)
-  const pool = new pg.Pool({ connectionString: url })
-  const adapter = new PrismaPg(pool)
-  return new PrismaClient({ adapter })
+  // Use the native Prisma Rust engine for stability instead of PrismaPg which can drop connections on hot reload
+  return new PrismaClient({
+    datasources: { db: { url } }
+  })
 }
 
 // Re-use a single PrismaClient instance in dev (hot-reloading safety)
