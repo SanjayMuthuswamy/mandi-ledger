@@ -11,9 +11,10 @@ export async function listStock(_req: Request, res: Response) {
     include: {
       variety: true,
       warehouse: true,
-    },
-    orderBy: { variety: { name: 'asc' } },
+    }
   })
+
+  entries.sort((a, b) => a.variety.name.localeCompare(b.variety.name))
 
   // Shape to match the StockEntry interface expected by the frontend hook
   const shaped = entries.map((s) => ({

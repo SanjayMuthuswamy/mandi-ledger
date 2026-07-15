@@ -31,7 +31,7 @@ function Ticker() {
       <div className="text-right shrink-0 pl-4 border-l border-brass/30 ml-4 flex items-center gap-4">
         <div className="hidden md:block">
           <div className="font-display text-xl uppercase tracking-tighter text-stone">Mandi Board</div>
-          <div className="font-mono text-xs text-stone/50">v1.1.0</div>
+          <div className="font-mono text-xs text-stone/50">v1.2.0</div>
         </div>
         <button onClick={logout} className="text-stone hover:text-ledger-red transition-colors md:hidden">
           <LogOut size={20} />

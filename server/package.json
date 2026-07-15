@@ -1,6 +1,6 @@
 {
   "name": "mandi-ledger-server",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Mandi Ledger — Express + Prisma backend",
   "type": "module",
   "main": "src/index.ts",

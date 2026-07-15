@@ -1,7 +1,7 @@
 {
-  "name": "rice_website",
+  "name": "rice-store-management",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

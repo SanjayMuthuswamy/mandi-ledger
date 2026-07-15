@@ -106,25 +106,25 @@ export function Reports() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex bg-stone-light border border-brass/50 rounded-sm overflow-x-auto hide-scrollbar p-0.5 shadow-[2px_2px_0px_0px_rgba(140,111,62,0.2)] w-full md:w-max">
+      {/* Report Type Tabs */}
+      <div className="flex flex-wrap bg-stone-light border border-brass/50 rounded-sm p-0.5 shadow-[2px_2px_0px_0px_rgba(140,111,62,0.2)] w-full md:w-max">
         <button 
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${activeReport === 'inventory' ? 'bg-ink text-stone' : 'hover:bg-ink/5 text-ink'}`}
+          className={`flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${activeReport === 'inventory' ? 'bg-ink text-stone shadow-sm rounded-[1px]' : 'hover:bg-ink/5 text-ink'}`}
           onClick={() => setActiveReport('inventory')}
         >
-          <Package size={16} /> Inventory Report
+          <Package size={16} /> Inventory
         </button>
         <button 
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${activeReport === 'sales' ? 'bg-ink text-stone' : 'hover:bg-ink/5 text-ink'}`}
+          className={`flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${activeReport === 'sales' ? 'bg-ink text-stone shadow-sm rounded-[1px]' : 'hover:bg-ink/5 text-ink'}`}
           onClick={() => setActiveReport('sales')}
         >
-          <ShoppingCart size={16} /> Sales Report
+          <ShoppingCart size={16} /> Sales
         </button>
         <button 
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${activeReport === 'purchases' ? 'bg-ink text-stone' : 'hover:bg-ink/5 text-ink'}`}
+          className={`flex-1 md:flex-none flex justify-center items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${activeReport === 'purchases' ? 'bg-ink text-stone shadow-sm rounded-[1px]' : 'hover:bg-ink/5 text-ink'}`}
           onClick={() => setActiveReport('purchases')}
         >
-          <Wheat size={16} /> Purchases Report
+          <Wheat size={16} /> Purchases
         </button>
       </div>
 
