@@ -1,25 +1,31 @@
 import type { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, Navigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { LayoutDashboard, Wheat, Users, ArrowDownToLine, ArrowUpFromLine, Layers, PieChart, LogOut } from 'lucide-react'
 
+import { useDashboard } from '@/data/useDashboard'
+import { useAuth } from '@/contexts/AuthContext'
+
 function Ticker() {
+  const { summary } = useDashboard()
+  const { logout } = useAuth()
+  
   return (
     <div className="bg-ink text-stone border-b border-brass flex items-center justify-between px-4 md:px-6 py-4 overflow-hidden">
       <div className="flex gap-8 md:gap-12 overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full md:w-auto flex-1">
         <div className="flex flex-col snap-start shrink-0 w-[85vw] md:w-auto">
           <span className="text-[10px] uppercase tracking-widest text-stone/70 mb-1 transform origin-left">Total Rice Stock</span>
-          <span className="font-mono text-3xl text-paddy">17,200 <span className="text-sm text-stone/50">kg</span></span>
+          <span className="font-mono text-3xl text-paddy">{(summary?.kpis?.totalStockKg || 0).toLocaleString()} <span className="text-sm text-stone/50">kg</span></span>
         </div>
         <div className="hidden md:block w-px bg-brass/30 h-10 shrink-0" />
         <div className="flex flex-col snap-start shrink-0 w-[85vw] md:w-auto">
           <span className="text-[10px] uppercase tracking-widest text-stone/70 mb-1 transform origin-left">Total Purchases</span>
-          <span className="font-mono text-3xl">42,500 <span className="text-sm text-stone/50">kg</span></span>
+          <span className="font-mono text-3xl">₹{(summary?.kpis?.totalPurchaseValue || 0).toLocaleString()}</span>
         </div>
         <div className="hidden md:block w-px bg-brass/30 h-10 shrink-0" />
         <div className="flex flex-col snap-start shrink-0 w-[85vw] md:w-auto">
           <span className="text-[10px] uppercase tracking-widest text-stone/70 mb-1 transform origin-left">Total Sales</span>
-          <span className="font-mono text-3xl">25,300 <span className="text-sm text-stone/50">kg</span></span>
+          <span className="font-mono text-3xl">₹{(summary?.kpis?.totalSaleValue || 0).toLocaleString()}</span>
         </div>
       </div>
       <div className="text-right shrink-0 pl-4 border-l border-brass/30 ml-4 flex items-center gap-4">
@@ -27,9 +33,9 @@ function Ticker() {
           <div className="font-display text-xl uppercase tracking-tighter text-stone">Mandi Board</div>
           <div className="font-mono text-xs text-stone/50">v1.1.0</div>
         </div>
-        <Link to="/login" className="text-stone hover:text-ledger-red transition-colors md:hidden">
+        <button onClick={logout} className="text-stone hover:text-ledger-red transition-colors md:hidden">
           <LogOut size={20} />
-        </Link>
+        </button>
       </div>
     </div>
   )
@@ -41,12 +47,13 @@ const NAV_ITEMS = [
   { path: '/purchases', label: 'Purchases', icon: ArrowDownToLine },
   { path: '/sales', label: 'Sales', icon: ArrowUpFromLine },
   { path: '/inventory', label: 'Inventory', icon: Layers, mobileHidden: true },
-  { path: '/suppliers', label: 'Suppliers', icon: Users, mobileHidden: true },
+  { path: '/suppliers', label: 'Suppliers', icon: Users },
   { path: '/reports', label: 'Reports', icon: PieChart },
 ]
 
 function LedgerIndex() {
   const location = useLocation()
+  const { logout } = useAuth()
   
   return (
     <>
@@ -74,10 +81,10 @@ function LedgerIndex() {
           })}
         </div>
         <div className="px-8 pb-2">
-          <Link to="/login" className="py-2.5 flex items-center gap-4 text-ledger-red/70 hover:text-ledger-red transition-colors font-sans text-sm">
+          <button onClick={logout} className="py-2.5 flex items-center gap-4 text-ledger-red/70 hover:text-ledger-red transition-colors font-sans text-sm w-full">
             <LogOut size={16} />
             <span className="font-medium">Logout</span>
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -111,7 +118,10 @@ function LedgerIndex() {
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const { isAuthenticated } = useAuth()
+
   if (location.pathname === '/login') return <>{children}</>
+  if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />
 
   return (
     <div className="h-screen w-full flex flex-col bg-stone overflow-hidden">

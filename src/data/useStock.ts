@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/lib/api'
 
 export type VarietyId = 'ponni' | 'sona' | 'basmati' | 'idli' | 'black' | 'brown'
 
@@ -13,104 +14,62 @@ export interface StockEntry {
   lastUpdated: string
 }
 
-const INITIAL_STOCK: StockEntry[] = [
-  { id: '1', varietyId: 'ponni', varietyName: 'Ponni Boiled', quantity: 4500, price: 42, threshold: 2000, max: 10000, lastUpdated: '2026-07-14' },
-  { id: '2', varietyId: 'sona', varietyName: 'Sona Masuri', quantity: 1200, price: 54, threshold: 2000, max: 10000, lastUpdated: '2026-07-13' },
-  { id: '3', varietyId: 'basmati', varietyName: 'Basmati Premium', quantity: 8000, price: 110, threshold: 3000, max: 15000, lastUpdated: '2026-07-14' },
-  { id: '4', varietyId: 'idli', varietyName: 'Idli Rice', quantity: 3500, price: 38, threshold: 1500, max: 8000, lastUpdated: '2026-07-12' },
-]
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-
 export function useStock() {
-  const [stock, setStock] = useState<StockEntry[]>(INITIAL_STOCK)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    let isMounted = true
+  const { data: stock = [], isLoading, error } = useQuery({
+    queryKey: ['stock'],
+    queryFn: async () => {
+      const data = await api.get('/stock')
+      return data as StockEntry[]
+    },
+  })
 
-    async function loadStock() {
-      try {
-        const response = await fetch(`${API_URL}/api/stock`)
-        if (!response.ok) {
-          throw new Error('Unable to load stock')
-        }
+  const updateQuantityMutation = useMutation({
+    mutationFn: async ({ id, quantity }: { id: string, quantity: number }) => {
+      return await api.patch(`/stock/${id}`, { quantity })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+    },
+  })
 
-        const entries = await response.json() as StockEntry[]
-        if (isMounted) {
-          setStock(entries)
-        }
-      } catch {
-        if (isMounted) {
-          setStock(INITIAL_STOCK)
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
+  const deleteStockMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.delete(`/stock/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+    },
+  })
 
-    loadStock()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
+  const addStockMutation = useMutation({
+    mutationFn: async (entry: Omit<StockEntry, 'id' | 'lastUpdated'>) => {
+      return await api.post('/stock', entry)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+    },
+  })
 
   const updateQuantity = async (id: string, newQuantity: number) => {
-    const lastUpdated = new Date().toISOString().split('T')[0]
-    setStock(prev => prev.map(item => item.id === id ? { ...item, quantity: newQuantity, lastUpdated } : item))
-
-    try {
-      const response = await fetch(`${API_URL}/api/stock/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: newQuantity }),
-      })
-
-      if (response.ok) {
-        const updatedEntry = await response.json() as StockEntry
-        setStock(prev => prev.map(item => item.id === id ? updatedEntry : item))
-      }
-    } catch {
-      // Keep the optimistic local update when the development API is offline.
-    }
+     await updateQuantityMutation.mutateAsync({ id, quantity: newQuantity })
   }
-
+  
   const deleteStock = async (id: string) => {
-    setStock(prev => prev.filter(item => item.id !== id))
-    try {
-      await fetch(`${API_URL}/api/stock/${id}`, { method: 'DELETE' })
-    } catch {
-      // Keep the optimistic local delete when the development API is offline.
-    }
+      await deleteStockMutation.mutateAsync(id)
   }
 
   const addStock = async (entry: Omit<StockEntry, 'id' | 'lastUpdated'>) => {
-    try {
-      const response = await fetch(`${API_URL}/api/stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry),
-      })
-
-      if (response.ok) {
-        const newEntry = await response.json() as StockEntry
-        setStock(prev => [...prev, newEntry])
-        return
-      }
-    } catch {
-      // Fall back to local state when the development API is offline.
-    }
-
-    const fallbackEntry: StockEntry = {
-      ...entry,
-      id: Math.random().toString(36).slice(2, 11),
-      lastUpdated: new Date().toISOString().split('T')[0],
-    }
-    setStock(prev => [...prev, fallbackEntry])
+      await addStockMutation.mutateAsync(entry)
   }
 
-  return { stock, isLoading, updateQuantity, deleteStock, addStock }
+  return { 
+    stock, 
+    isLoading, 
+    error,
+    updateQuantity, 
+    deleteStock, 
+    addStock 
+  }
 }

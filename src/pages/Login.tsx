@@ -1,10 +1,12 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion } from "framer-motion"
 import { Wheat, User, Lock, Eye, EyeOff, Shield, Loader2, Scale } from "lucide-react"
+import { api } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
 
 const loginSchema = z.object({
   employeeId: z.string().min(1, "Employee ID is required"),
@@ -16,9 +18,12 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shake, setShake] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -31,16 +36,23 @@ export function Login() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true)
+    setErrorMsg("")
     
-    // Simulate network request
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Hardcoded demo check
-    if (data.employeeId === "admin" && data.password === "password123") {
-      navigate('/')
-    } else {
+    try {
+      const response = await api.post('/auth/login', {
+        email: data.employeeId,
+        password: data.password
+      })
+      
+      login(response)
+      
+      const from = location.state?.from?.pathname || "/"
+      navigate(from, { replace: true })
+    } catch (err: any) {
+      setErrorMsg(err.data?.error || "Invalid credentials")
       setShake(true)
-      setTimeout(() => setShake(false), 500) // Reset shake
+      setTimeout(() => setShake(false), 500)
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -114,6 +126,7 @@ export function Login() {
             <div className="mb-8">
               <h2 className="font-display text-2xl uppercase tracking-wider text-ink mb-2">Welcome Back</h2>
               <p className="font-sans text-sm text-ink/60">Sign in to access your Mandi Ledger workspace.</p>
+              {errorMsg && <p className="mt-4 p-2 bg-ledger-red/10 border border-ledger-red/30 text-ledger-red text-sm font-medium rounded-sm">{errorMsg}</p>}
             </div>
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

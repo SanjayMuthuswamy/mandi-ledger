@@ -1,57 +1,77 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
 import { Input } from "@/components/ui/Input"
-import { useStock } from "@/data/useStock"
-import { Plus, Wheat } from "lucide-react"
+import { useVarieties } from "@/data/useVarieties"
+import { usePurchases } from "@/data/usePurchases"
+import { useSuppliers } from "@/data/useSuppliers"
+import { Plus, Wheat, Loader2 } from "lucide-react"
 
 export function Purchases() {
-  const { stock, updateQuantity } = useStock()
+  const { purchases, isLoading: isPurchasesLoading, addPurchase, deletePurchase } = usePurchases(1, 100)
+  const { varieties, isLoading: isVarietiesLoading } = useVarieties()
+  const { suppliers, isLoading: isSuppliersLoading } = useSuppliers(1, 100)
+  
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [selectedVariety, setSelectedVariety] = useState(stock[0]?.id || '')
+  const [selectedVariety, setSelectedVariety] = useState('')
+  const [selectedSupplier, setSelectedSupplier] = useState('')
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState<'kg' | 'quintal' | 'ton'>('kg')
   const [rate, setRate] = useState('')
-  const [purchases, setPurchases] = useState([
-    { id: '1', entryNo: 'P-1042', date: '2026-07-14', supplier: 'Rajesh Traders', varietyName: 'Ponni Boiled', varietyId: 'ponni', quantity: 4500, rate: 42, total: 189000 },
-    { id: '2', entryNo: 'P-1041', date: '2026-07-13', supplier: 'Sri Balaji Agro', varietyName: 'Sona Masuri', varietyId: 'sona', quantity: 1200, rate: 54, total: 64800 },
-  ])
 
-  const handleRecordPurchase = (e: React.FormEvent) => {
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const handleRecordPurchase = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMsg('')
     
-    // Calculate actual kg based on unit
     let actualKg = Number(quantity)
     if (unit === 'quintal') actualKg *= 100
     if (unit === 'ton') actualKg *= 1000
 
-    const variety = stock.find(v => v.id === selectedVariety)
-    if (variety) {
-      updateQuantity(variety.id, variety.quantity + actualKg)
-      
-      const newPurchase = {
-        id: Math.random().toString(),
-        entryNo: `P-${1043 + purchases.length}`,
-        date: new Date().toISOString().split('T')[0],
-        supplier: 'New Supplier', // Hardcoded for demo
-        varietyName: variety.varietyName,
-        varietyId: variety.varietyId,
-        quantity: actualKg,
-        rate: Number(rate),
-        total: actualKg * Number(rate)
+    if (selectedVariety && selectedSupplier) {
+      try {
+        await addPurchase({
+          supplierId: selectedSupplier,
+          purchaseDate: new Date().toISOString(),
+          paymentStatus: 'PENDING',
+          items: [{
+            riceVarietyId: selectedVariety,
+            quantity: actualKg,
+            rate: Number(rate)
+          }]
+        })
+        
+        setIsDrawerOpen(false)
+        setQuantity('')
+        setRate('')
+      } catch (err: any) {
+        let msg = err.data?.error || "Failed to record purchase. Please try again."
+        if (err.data?.issues) {
+           const issuesStr = Object.entries(err.data.issues)
+              .map(([key, value]) => `${key}: ${(value as string[]).join(', ')}`)
+              .join(' | ')
+           msg += ` (${issuesStr})`
+        }
+        setErrorMsg(msg)
       }
-      
-      setPurchases([newPurchase, ...purchases])
-      setIsDrawerOpen(false)
-      setQuantity('')
-      setRate('')
     }
   }
 
-  const selectedVarietyDetails = stock.find(v => v.id === selectedVariety)
+  const handleVoidPurchase = (id: string) => {
+    const pwd = window.prompt("Admin action required. Please enter password to void this purchase:")
+    if (pwd === "Admin@1234") {
+      deletePurchase(id)
+    } else if (pwd !== null) {
+      alert("Incorrect password. Action denied.")
+    }
+  }
+
+  const selectedVarietyDetails = useMemo(() => 
+    varieties.find(v => v.id === selectedVariety), 
+  [varieties, selectedVariety])
   
-  // Auto-computed total
   let computedTotal = 0
   let displayQuantity = Number(quantity) || 0
   if (unit === 'quintal') displayQuantity *= 100
@@ -65,88 +85,98 @@ export function Purchases() {
         <Button onClick={() => setIsDrawerOpen(true)} className="hidden md:flex">Record Purchase</Button>
       </div>
 
-      <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)] overflow-hidden">
-        {/* Mobile Cards */}
-        <div className="md:hidden flex flex-col gap-4 bg-stone pb-4">
-          {purchases.map(purchase => (
-            <div key={purchase.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
-              <div className="flex justify-between items-start border-b border-brass/10 pb-2">
-                <div>
-                  <div className="text-ink font-bold font-mono">{purchase.entryNo}</div>
-                  <div className="text-xs text-ink/70 font-mono mt-0.5">{purchase.date}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono text-lg font-bold text-ink">₹{purchase.total.toLocaleString()}</div>
-                  <div className="text-xs text-ink/70 font-mono">₹{purchase.rate.toFixed(2)}/kg</div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-1">
-                <div className="flex flex-col gap-1">
-                  <div className="font-sans font-medium text-ink flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full bg-variety-${purchase.varietyId}`} />
-                    {purchase.varietyName}
-                  </div>
-                  <div className="text-sm text-ink/80">{purchase.supplier}</div>
-                </div>
-                <div className="text-paddy font-mono font-medium text-lg">
-                  +{purchase.quantity.toLocaleString()} <span className="text-xs">kg</span>
-                </div>
-              </div>
-            </div>
-          ))}
-          {purchases.length === 0 && (
-            <div className="p-12 text-center flex flex-col items-center justify-center gap-4 bg-stone border border-brass/20">
-              <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center">
-                <Wheat size={32} className="text-brass/40" />
-              </div>
-              <p className="font-sans text-ink/60 font-medium">No purchases logged yet.</p>
-            </div>
-          )}
+      {(isPurchasesLoading || isVarietiesLoading || isSuppliersLoading) ? (
+        <div className="flex justify-center p-12">
+          <Loader2 className="animate-spin text-turmeric w-8 h-8" />
         </div>
-
-        {/* Desktop Table */}
-        <table className="hidden md:table w-full text-left text-sm border-collapse">
-          <thead className="border-b-2 border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
-            <tr>
-              <th className="p-4 w-24">Entry No.</th>
-              <th className="p-4">Date</th>
-              <th className="p-4">Supplier</th>
-              <th className="p-4">Variety</th>
-              <th className="p-4 text-right">Quantity (kg)</th>
-              <th className="p-4 text-right">Rate (₹)</th>
-              <th className="p-4 text-right">Total (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchases.map((purchase) => (
-              <tr key={purchase.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30">
-                <td className="p-4 text-ink font-bold">{purchase.entryNo}</td>
-                <td className="p-4 text-ink/70">{purchase.date}</td>
-                <td className="p-4 font-sans text-ink">{purchase.supplier}</td>
-                <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-variety-${purchase.varietyId}`} />
-                  {purchase.varietyName}
-                </td>
-                <td className="p-4 text-right text-paddy font-medium">+{purchase.quantity.toLocaleString()}</td>
-                <td className="p-4 text-right">{purchase.rate.toFixed(2)}</td>
-                <td className="p-4 text-right font-medium text-ink">{purchase.total.toLocaleString()}</td>
-              </tr>
+      ) : (
+        <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)] overflow-hidden">
+          <div className="md:hidden flex flex-col gap-4 bg-stone pb-4">
+            {purchases.map(purchase => (
+              <div key={purchase.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex justify-between items-start border-b border-brass/10 pb-2">
+                  <div>
+                    <div className="text-ink font-bold font-mono">{purchase.entryNo}</div>
+                    <div className="text-xs text-ink/70 font-mono mt-0.5">{purchase.purchaseDate.split('T')[0]}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-lg font-bold text-ink">₹{purchase.totalAmount.toLocaleString()}</div>
+                    <div className="text-xs text-ink/70 font-mono">₹{purchase.items[0]?.rate.toFixed(2)}/kg</div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <div className="flex flex-col gap-1">
+                    <div className="font-sans font-medium text-ink flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full bg-variety-${purchase.items[0]?.variety?.code}`} />
+                      {purchase.items[0]?.variety?.name}
+                    </div>
+                    <div className="text-sm text-ink/80">{purchase.supplier?.name}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="text-paddy font-mono font-medium text-lg">
+                      +{purchase.items[0]?.quantity.toLocaleString()} <span className="text-xs">kg</span>
+                    </div>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidPurchase(purchase.id)}>VOID</Button>
+                  </div>
+                </div>
+              </div>
             ))}
             {purchases.length === 0 && (
-              <tr>
-                <td colSpan={7}>
-                  <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
-                    <Wheat size={48} className="text-brass/20" />
-                    <p className="font-sans">No purchases recorded today. Record today's first purchase.</p>
-                  </div>
-                </td>
-              </tr>
+              <div className="p-12 text-center flex flex-col items-center justify-center gap-4 bg-stone border border-brass/20">
+                <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center">
+                  <Wheat size={32} className="text-brass/40" />
+                </div>
+                <p className="font-sans text-ink/60 font-medium">No purchases logged yet.</p>
+              </div>
             )}
-          </tbody>
-        </table>
-      </div>
+          </div>
 
-      {/* Mobile FAB */}
+          <table className="hidden md:table w-full text-left text-sm border-collapse">
+            <thead className="border-b-2 border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
+              <tr>
+                <th className="p-4 w-24">Entry No.</th>
+                <th className="p-4">Date</th>
+                <th className="p-4">Supplier</th>
+                <th className="p-4">Variety</th>
+                <th className="p-4 text-right">Quantity (kg)</th>
+                <th className="p-4 text-right">Rate (₹)</th>
+                <th className="p-4 text-right">Total (₹)</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {purchases.map((purchase) => (
+                <tr key={purchase.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30">
+                  <td className="p-4 text-ink font-bold">{purchase.entryNo}</td>
+                  <td className="p-4 text-ink/70">{purchase.purchaseDate.split('T')[0]}</td>
+                  <td className="p-4 font-sans text-ink">{purchase.supplier?.name}</td>
+                  <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full bg-variety-${purchase.items[0]?.variety?.code}`} />
+                    {purchase.items[0]?.variety?.name}
+                  </td>
+                  <td className="p-4 text-right text-paddy font-medium">+{purchase.items[0]?.quantity.toLocaleString()}</td>
+                  <td className="p-4 text-right">{purchase.items[0]?.rate.toFixed(2)}</td>
+                  <td className="p-4 text-right font-medium text-ink">{purchase.totalAmount.toLocaleString()}</td>
+                  <td className="p-4 text-right">
+                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidPurchase(purchase.id)}>VOID</Button>
+                  </td>
+                </tr>
+              ))}
+              {purchases.length === 0 && (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
+                      <Wheat size={48} className="text-brass/20" />
+                      <p className="font-sans">No purchases recorded today. Record today's first purchase.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <button 
         className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-turmeric text-ink rounded-full shadow-[2px_2px_0px_0px_rgba(20,32,26,1)] flex items-center justify-center z-30"
         onClick={() => setIsDrawerOpen(true)}
@@ -158,10 +188,16 @@ export function Purchases() {
         <form onSubmit={handleRecordPurchase} className="flex flex-col gap-6">
           <div className="space-y-2">
             <label className="font-medium text-sm">Supplier</label>
-            <select className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric" required>
-              <option value="1">Rajesh Traders</option>
-              <option value="2">Sri Balaji Agro</option>
-              <option value="3">Punjab Rice Mills</option>
+            <select 
+              className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric" 
+              required
+              value={selectedSupplier}
+              onChange={(e) => setSelectedSupplier(e.target.value)}
+            >
+              <option value="" disabled>Select Supplier</option>
+              {suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
             </select>
           </div>
           
@@ -169,7 +205,7 @@ export function Purchases() {
             <label className="font-medium text-sm">Rice Variety</label>
             <div className="flex gap-2">
               {selectedVarietyDetails && (
-                <div className={`w-10 h-10 shrink-0 border border-brass/30 bg-variety-${selectedVarietyDetails.varietyId} rounded-sm shadow-[inset_0_1px_3px_rgba(20,32,26,0.1)] flex items-center justify-center`} />
+                <div className={`w-10 h-10 shrink-0 border border-brass/30 bg-variety-${selectedVarietyDetails.code} rounded-sm shadow-[inset_0_1px_3px_rgba(20,32,26,0.1)] flex items-center justify-center`} />
               )}
               <select 
                 className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
@@ -177,8 +213,9 @@ export function Purchases() {
                 onChange={(e) => setSelectedVariety(e.target.value)}
                 required
               >
-                {stock.map(v => (
-                  <option key={v.id} value={v.id}>{v.varietyName}</option>
+                <option value="" disabled>Select Variety</option>
+                {varieties.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
               </select>
             </div>
@@ -220,6 +257,12 @@ export function Purchases() {
               className="font-mono"
             />
           </div>
+
+          {errorMsg && (
+            <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm flex items-start gap-2 rounded-sm font-medium">
+              <span className="mt-0.5">⚠</span> {errorMsg}
+            </div>
+          )}
 
           <div className="bg-ink/5 p-4 border border-brass/20 flex justify-between items-center">
             <span className="text-sm font-medium uppercase tracking-wider text-ink/70">Total Amount</span>

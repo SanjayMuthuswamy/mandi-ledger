@@ -2,10 +2,10 @@ import { useState } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { useStock } from "@/data/useStock"
 import { GrainGauge } from "@/components/ui/GrainGauge"
-import { Package } from "lucide-react"
+import { Package, Loader2 } from "lucide-react"
 
 export function Inventory() {
-  const { stock } = useStock()
+  const { stock, isLoading } = useStock()
   const [view, setView] = useState<'grid' | 'table'>('grid')
 
   return (
@@ -35,7 +35,11 @@ export function Inventory() {
         </div>
       </div>
 
-      {view === 'grid' ? (
+      {isLoading ? (
+        <div className="flex justify-center p-12">
+          <Loader2 className="animate-spin text-turmeric w-8 h-8" />
+        </div>
+      ) : view === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stock.length === 0 ? (
             <div className="col-span-full p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3] border border-dashed border-brass/30">

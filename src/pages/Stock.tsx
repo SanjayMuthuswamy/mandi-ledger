@@ -28,6 +28,15 @@ export function Stock() {
     setIsDrawerOpen(false)
   }
 
+  const handleVoidStock = (id: string) => {
+    const pwd = window.prompt("Admin action required. Please enter password to void this stock entry:")
+    if (pwd === "Admin@1234") {
+      deleteStock(id)
+    } else if (pwd !== null) {
+      alert("Incorrect password. Action denied.")
+    }
+  }
+
   return (
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex justify-between items-start">
@@ -67,7 +76,7 @@ export function Stock() {
                   <Button variant="ghost" className="h-8 px-2 text-xs border border-brass/20" onClick={() => updateQuantity(item.id, item.quantity + 100)}>+100</Button>
                   <Button variant="ghost" className="h-8 px-2 text-xs border border-brass/20" onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 100))}>-100</Button>
                 </div>
-                <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red" onClick={() => deleteStock(item.id)}>VOID</Button>
+                <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red" onClick={() => handleVoidStock(item.id)}>VOID</Button>
               </div>
             </div>
           ))}
@@ -110,7 +119,7 @@ export function Stock() {
                 <td className="p-4 text-right">
                   <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => updateQuantity(item.id, item.quantity + 100)}>+100</Button>
                   <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 100))}>-100</Button>
-                  <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => deleteStock(item.id)}>VOID</Button>
+                  <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidStock(item.id)}>VOID</Button>
                 </td>
               </tr>
             ))}
