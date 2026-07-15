@@ -5,7 +5,7 @@ import {
   Calendar, Download, Printer, Package, ShoppingCart, 
   Wheat, Wallet, Users, TrendingUp, AlertTriangle, 
   FileText, Search, SlidersHorizontal, ArrowDownUp, 
-  Columns, Settings2, Share, Lightbulb, ChevronRight, Menu, X
+  Columns, Settings2, Share, ChevronRight, Menu, X
 } from "lucide-react"
 
 export function Reports() {

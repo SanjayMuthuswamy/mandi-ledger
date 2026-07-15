@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
-import { useStock } from "@/data/useStock"
+import { type VarietyId, useStock } from "@/data/useStock"
 import { GrainGauge } from "@/components/ui/GrainGauge"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
@@ -8,12 +8,23 @@ import { Input } from "@/components/ui/Input"
 import { Plus } from "lucide-react"
 
 export function Stock() {
-  const { stock, updateQuantity, deleteStock } = useStock()
+  const { stock, isLoading, updateQuantity, deleteStock, addStock } = useStock()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-  const handleAddStock = (e: React.FormEvent) => {
+  const handleAddStock = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // Mock implementation for adding stock
+    const formData = new FormData(e.currentTarget)
+
+    await addStock({
+      varietyName: String(formData.get("varietyName")),
+      varietyId: formData.get("varietyId") as VarietyId,
+      quantity: Number(formData.get("quantity")),
+      price: Number(formData.get("price")),
+      threshold: Number(formData.get("threshold") || 0),
+      max: Number(formData.get("max") || 10000),
+    })
+
+    e.currentTarget.reset()
     setIsDrawerOpen(false)
   }
 
@@ -23,6 +34,10 @@ export function Stock() {
         <StampHeader title="Rice Stock" />
         <Button onClick={() => setIsDrawerOpen(true)} className="hidden md:flex">Add Stock</Button>
       </div>
+
+      {isLoading && (
+        <div className="font-mono text-sm text-ink/60">Loading stock ledger...</div>
+      )}
 
       <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)]">
         {/* Mobile Cards */}
@@ -122,11 +137,11 @@ export function Stock() {
         <form onSubmit={handleAddStock} className="flex flex-col gap-6">
           <div className="space-y-2">
             <label className="font-medium text-sm">Rice Variety Name</label>
-            <Input placeholder="e.g. Sona Masuri" required />
+            <Input name="varietyName" placeholder="e.g. Sona Masuri" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Variety Type</label>
-            <select className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric" required>
+            <select name="varietyId" className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric" required>
               <option value="ponni">Ponni</option>
               <option value="sona">Sona</option>
               <option value="basmati">Basmati</option>
@@ -137,11 +152,19 @@ export function Stock() {
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Initial Quantity (kg)</label>
-            <Input type="number" placeholder="0" required />
+            <Input name="quantity" type="number" min="0" placeholder="0" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Unit Price (₹/kg)</label>
-            <Input type="number" placeholder="0" required />
+            <Input name="price" type="number" min="0" placeholder="0" required />
+          </div>
+          <div className="space-y-2">
+            <label className="font-medium text-sm">Alert Threshold (kg)</label>
+            <Input name="threshold" type="number" min="0" placeholder="0" required />
+          </div>
+          <div className="space-y-2">
+            <label className="font-medium text-sm">Storage Capacity (kg)</label>
+            <Input name="max" type="number" min="1" placeholder="10000" required />
           </div>
           <div className="pt-4 border-t border-brass/20">
             <Button type="submit" className="w-full">Add Stock</Button>

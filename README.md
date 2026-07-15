@@ -1,6 +1,6 @@
 # Mandi Ledger (v1.1.0)
 
-A production-grade, ledger-inspired ERP and stock management system tailored specifically for a grain mandi (market) and warehouse operations. Built with React, Tailwind CSS, Node.js, and PostgreSQL, this system abandons generic SaaS templates in favor of a bespoke, physical-ledger aesthetic characterized by stamped typography, brass hairlines, and variety-specific grain tracking.
+A production-grade, ledger-inspired ERP and stock management system tailored specifically for a grain mandi (market) and warehouse operations. Built with React, Tailwind CSS, Python FastAPI, and PostgreSQL-ready data models, this system abandons generic SaaS templates in favor of a bespoke, physical-ledger aesthetic characterized by stamped typography, brass hairlines, and variety-specific grain tracking.
 
 ## 🌾 Features
 
@@ -21,13 +21,11 @@ A production-grade, ledger-inspired ERP and stock management system tailored spe
 - **Icons:** Lucide React
 
 ### Backend (API)
-- **Runtime:** Node.js LTS
-- **Framework:** Express.js
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Authentication:** JWT & bcrypt
-- **Logging:** Pino
-- **Validation:** Zod
+- **Runtime:** Python 3.11+
+- **Framework:** FastAPI
+- **Server:** Uvicorn
+- **Validation:** Pydantic
+- **Database:** PostgreSQL-ready
 
 ## 🎨 Design System: "Ledger Noir"
 
@@ -44,6 +42,7 @@ The application uses a strict 6-token color palette:
 
 ### Prerequisites
 - Node.js (v18 or higher)
+- Python 3.11 or higher
 - PostgreSQL Database
 - npm or yarn
 
@@ -65,19 +64,21 @@ The application uses a strict 6-token color palette:
    ```
 2. Install backend dependencies:
    ```bash
-   npm install
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
    ```
-3. Set up your `.env` file with your `DATABASE_URL` and `JWT_SECRET`.
-4. Run Prisma Migrations:
+3. Start the FastAPI development server:
    ```bash
-   npx prisma migrate dev
+   uvicorn main:app --reload --port 8000
    ```
+4. Open the interactive API docs at `http://localhost:8000/docs`.
 
 ## 📂 Project Structure
 
 ```text
 mandi-ledger/
-├── backend/          # Express API, Prisma Schema, Auth, and Audit Services
+├── backend/          # FastAPI service and stock API
 ├── src/
 │   ├── components/
 │   │   ├── layout/   # App layout, Ticker, and Ledger Index navigation

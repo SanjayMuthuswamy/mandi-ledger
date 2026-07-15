@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export type VarietyId = 'ponni' | 'sona' | 'basmati' | 'idli' | 'black' | 'brown'
 
@@ -20,26 +20,97 @@ const INITIAL_STOCK: StockEntry[] = [
   { id: '4', varietyId: 'idli', varietyName: 'Idli Rice', quantity: 3500, price: 38, threshold: 1500, max: 8000, lastUpdated: '2026-07-12' },
 ]
 
-// TODO: replace with API call
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
 export function useStock() {
   const [stock, setStock] = useState<StockEntry[]>(INITIAL_STOCK)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    setStock(prev => prev.map(item => item.id === id ? { ...item, quantity: newQuantity, lastUpdated: new Date().toISOString().split('T')[0] } : item))
-  }
+  useEffect(() => {
+    let isMounted = true
 
-  const deleteStock = (id: string) => {
-    setStock(prev => prev.filter(item => item.id !== id))
-  }
+    async function loadStock() {
+      try {
+        const response = await fetch(`${API_URL}/api/stock`)
+        if (!response.ok) {
+          throw new Error('Unable to load stock')
+        }
 
-  const addStock = (entry: Omit<StockEntry, 'id' | 'lastUpdated'>) => {
-    const newEntry: StockEntry = {
-      ...entry,
-      id: Math.random().toString(36).substr(2, 9),
-      lastUpdated: new Date().toISOString().split('T')[0]
+        const entries = await response.json() as StockEntry[]
+        if (isMounted) {
+          setStock(entries)
+        }
+      } catch {
+        if (isMounted) {
+          setStock(INITIAL_STOCK)
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
     }
-    setStock(prev => [...prev, newEntry])
+
+    loadStock()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const updateQuantity = async (id: string, newQuantity: number) => {
+    const lastUpdated = new Date().toISOString().split('T')[0]
+    setStock(prev => prev.map(item => item.id === id ? { ...item, quantity: newQuantity, lastUpdated } : item))
+
+    try {
+      const response = await fetch(`${API_URL}/api/stock/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: newQuantity }),
+      })
+
+      if (response.ok) {
+        const updatedEntry = await response.json() as StockEntry
+        setStock(prev => prev.map(item => item.id === id ? updatedEntry : item))
+      }
+    } catch {
+      // Keep the optimistic local update when the development API is offline.
+    }
   }
 
-  return { stock, updateQuantity, deleteStock, addStock }
+  const deleteStock = async (id: string) => {
+    setStock(prev => prev.filter(item => item.id !== id))
+    try {
+      await fetch(`${API_URL}/api/stock/${id}`, { method: 'DELETE' })
+    } catch {
+      // Keep the optimistic local delete when the development API is offline.
+    }
+  }
+
+  const addStock = async (entry: Omit<StockEntry, 'id' | 'lastUpdated'>) => {
+    try {
+      const response = await fetch(`${API_URL}/api/stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      })
+
+      if (response.ok) {
+        const newEntry = await response.json() as StockEntry
+        setStock(prev => [...prev, newEntry])
+        return
+      }
+    } catch {
+      // Fall back to local state when the development API is offline.
+    }
+
+    const fallbackEntry: StockEntry = {
+      ...entry,
+      id: Math.random().toString(36).slice(2, 11),
+      lastUpdated: new Date().toISOString().split('T')[0],
+    }
+    setStock(prev => [...prev, fallbackEntry])
+  }
+
+  return { stock, isLoading, updateQuantity, deleteStock, addStock }
 }
