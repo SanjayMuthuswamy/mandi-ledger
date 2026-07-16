@@ -31,6 +31,28 @@ export function Dashboard() {
         </div>
       )}
 
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-stone-light border border-brass/30 p-6 shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)]">
+          <div className="text-xs font-sans text-ink/50 uppercase tracking-widest mb-1 font-semibold">Total Stock</div>
+          <div className="font-mono text-2xl font-bold text-ink tabular-nums">
+            {(summary?.kpis?.totalStockKg || 0).toLocaleString()} <span className="text-sm font-sans text-ink/60 font-normal">kg</span>
+          </div>
+        </div>
+        <div className="bg-stone-light border border-brass/30 p-6 shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)]">
+          <div className="text-xs font-sans text-ink/50 uppercase tracking-widest mb-1 font-semibold">Total Purchases</div>
+          <div className="font-mono text-2xl font-bold text-ink tabular-nums">
+            ₹{(summary?.kpis?.totalPurchaseValue || 0).toLocaleString()}
+          </div>
+        </div>
+        <div className="bg-stone-light border border-brass/30 p-6 shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)]">
+          <div className="text-xs font-sans text-ink/50 uppercase tracking-widest mb-1 font-semibold">Total Sales</div>
+          <div className="font-mono text-2xl font-bold text-ink tabular-nums">
+            ₹{(summary?.kpis?.totalSaleValue || 0).toLocaleString()}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-stone-light p-6 border border-brass/30 shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)]">
           <h3 className="font-display uppercase tracking-wider text-lg mb-6 border-b border-brass/20 pb-2">Variety Breakdown</h3>
