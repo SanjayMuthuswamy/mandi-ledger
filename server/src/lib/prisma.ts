@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { logger } from './logger.js'
 
 declare global {
@@ -8,7 +9,9 @@ declare global {
 }
 
 function createClient(): PrismaClient {
-  return new PrismaClient()
+  const connectionString = process.env['DATABASE_URL']!
+  const adapter = new PrismaPg({ connectionString })
+  return new PrismaClient({ adapter })
 }
 
 // Re-use a single PrismaClient instance in dev (hot-reloading safety)
