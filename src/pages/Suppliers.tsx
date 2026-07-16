@@ -193,7 +193,6 @@ export function Suppliers() {
                   <div className="text-[10px] uppercase tracking-widest text-ink/50 font-sans font-semibold">Total Purchases</div>
                   <div className="font-mono text-ink font-medium">{supplier._count?.purchases || 0}</div>
                 </div>
-                <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={(e) => handleDeleteSupplier(supplier.id, e)}>DELETE</Button>
               </div>
             </div>
           ))}
@@ -207,7 +206,6 @@ export function Suppliers() {
                 <th className="p-4">Contact</th>
                 <th className="p-4">Location</th>
                 <th className="p-4 text-right">Purchases</th>
-                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brass/10 font-mono">
@@ -221,9 +219,6 @@ export function Suppliers() {
                   <td className="p-4 text-ink/80">{supplier.phone || '-'}</td>
                   <td className="p-4 text-ink/80">{supplier.address || '-'}</td>
                   <td className="p-4 text-right font-medium text-ink">{supplier._count?.purchases || 0}</td>
-                  <td className="p-4 text-right">
-                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={(e) => handleDeleteSupplier(supplier.id, e)}>DELETE</Button>
-                  </td>
                 </tr>
               ))}
             </tbody>
