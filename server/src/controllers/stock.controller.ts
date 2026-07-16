@@ -119,7 +119,7 @@ export async function listLowStock(_req: Request, res: Response) {
 // ── GET /api/stock/:id ────────────────────────────────────────────────────────
 export async function getStock(req: Request, res: Response) {
   const entry = await prisma.stock.findUniqueOrThrow({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     include: { variety: true, warehouse: true },
   })
   res.json(entry)
@@ -130,7 +130,7 @@ export async function updateStockQuantity(req: Request, res: Response) {
   const { quantity } = UpdateStockQuantitySchema.parse(req.body)
 
   const updated = await prisma.stock.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { quantity },
     include: { variety: true, warehouse: true },
   })
@@ -149,6 +149,6 @@ export async function updateStockQuantity(req: Request, res: Response) {
 
 // ── DELETE /api/stock/:id ─────────────────────────────────────────────────────
 export async function deleteStock(req: Request, res: Response) {
-  await prisma.stock.delete({ where: { id: req.params.id } })
+  await prisma.stock.delete({ where: { id: String(req.params.id) } })
   res.status(204).send()
 }

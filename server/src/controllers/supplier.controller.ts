@@ -40,7 +40,7 @@ export async function createSupplier(req: Request, res: Response) {
 // ── GET /api/suppliers/:id ────────────────────────────────────────────────────
 export async function getSupplier(req: Request, res: Response) {
   const supplier = await prisma.supplier.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: {
       purchases: {
         where: { deletedAt: null },
@@ -53,7 +53,7 @@ export async function getSupplier(req: Request, res: Response) {
 
   // Calculate total volume supplied
   const totalVolume = supplier.purchases.reduce(
-    (sum, p) => sum + p.items.reduce((s, i) => s + i.quantity, 0),
+    (sum: number, p: any) => sum + p.items.reduce((s: number, i: any) => s + i.quantity, 0),
     0
   )
 
@@ -64,7 +64,7 @@ export async function getSupplier(req: Request, res: Response) {
 export async function updateSupplier(req: Request, res: Response) {
   const body = UpdateSupplierSchema.parse(req.body)
   const supplier = await prisma.supplier.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: body,
   })
   res.json(supplier)
@@ -73,7 +73,7 @@ export async function updateSupplier(req: Request, res: Response) {
 // ── DELETE /api/suppliers/:id ─────────────────────────────────────────────────
 export async function deleteSupplier(req: Request, res: Response) {
   await prisma.supplier.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date() },
   })
   res.status(204).send()

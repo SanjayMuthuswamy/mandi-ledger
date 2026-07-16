@@ -8,11 +8,12 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Truck, Phone, MapPin, Plus, Loader2 } from "lucide-react"
 
 export function Suppliers() {
-  const { suppliers, isLoading, addSupplier, deleteSupplier } = useSuppliers(1, 100)
+  const { suppliers, isLoading, addSupplier, deleteSupplier, updateSupplier } = useSuppliers(1, 100)
   const { user } = useAuth()
   const [view, setView] = useState<'cards' | 'list'>('cards')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
+  const [supplierToEdit, setSupplierToEdit] = useState<any>(null)
 
   const { supplier: supplierDetails, isLoading: isDetailsLoading } = useSupplierDetails(selectedSupplier)
 
@@ -24,14 +25,21 @@ export function Suppliers() {
     const formData = new FormData(e.currentTarget)
     
     try {
-      await addSupplier({
+      const data = {
         name: formData.get('name') as string,
         phone: formData.get('phone') as string,
         address: formData.get('location') as string,
         gstNumber: formData.get('gstin') as string,
-      })
+      }
+      
+      if (supplierToEdit) {
+        await updateSupplier(supplierToEdit.id, data)
+      } else {
+        await addSupplier(data)
+      }
       
       setIsDrawerOpen(false)
+      setSupplierToEdit(null)
     } catch (err: any) {
       let msg = err.data?.error || "Failed to add supplier."
       if (err.data?.issues) {
@@ -82,7 +90,10 @@ export function Suppliers() {
                 <div className="text-right flex flex-col items-end">
                   <div className="font-mono text-2xl text-ink">{(supplierDetails?.purchases?.reduce((acc: number, p: any) => acc + p.totalAmount, 0) || 0).toLocaleString()} <span className="text-sm text-ink/60">₹</span></div>
                   <div className="text-xs uppercase tracking-wider text-ink/50 font-sans font-medium mb-2">Total Value Supplied</div>
-                  <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSupplier(supplierDetails.id)}>DELETE</Button>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => { setSupplierToEdit(supplierDetails); setIsDrawerOpen(true); }}>EDIT</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSupplier(supplierDetails.id)}>DELETE</Button>
+                  </div>
                 </div>
               </div>
             </>
@@ -151,7 +162,7 @@ export function Suppliers() {
               List
             </button>
           </div>
-          <Button onClick={() => setIsDrawerOpen(true)} className="hidden md:flex">Add Supplier</Button>
+          <Button onClick={() => { setSupplierToEdit(null); setIsDrawerOpen(true); }} className="hidden md:flex">Add Supplier</Button>
         </div>
       </div>
 
@@ -222,12 +233,12 @@ export function Suppliers() {
 
       <button 
         className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-turmeric text-ink rounded-full shadow-[2px_2px_0px_0px_rgba(20,32,26,1)] flex items-center justify-center z-30"
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={() => { setSupplierToEdit(null); setIsDrawerOpen(true); }}
       >
         <Plus size={24} />
       </button>
 
-      <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="Add Supplier">
+      <Drawer isOpen={isDrawerOpen} onClose={() => { setIsDrawerOpen(false); setSupplierToEdit(null); }} title={supplierToEdit ? "Edit Supplier" : "Add Supplier"}>
         <form onSubmit={handleAddSupplier} className="flex flex-col gap-6">
           {errorMsg && (
             <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm font-sans rounded-sm shadow-sm">
@@ -236,22 +247,22 @@ export function Suppliers() {
           )}
           <div className="space-y-2">
             <label className="font-medium text-sm">Supplier Name</label>
-            <Input name="name" placeholder="e.g. Rajesh Traders" required />
+            <Input name="name" defaultValue={supplierToEdit?.name} placeholder="e.g. Rajesh Traders" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Phone Number</label>
-            <Input name="phone" type="tel" placeholder="+91 " required />
+            <Input name="phone" type="tel" defaultValue={supplierToEdit?.phone} placeholder="+91 " required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Location / City</label>
-            <Input name="location" placeholder="e.g. Tiruppur" required />
+            <Input name="location" defaultValue={supplierToEdit?.address} placeholder="e.g. Tiruppur" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">GSTIN (Optional)</label>
-            <Input name="gstin" placeholder="22AAAAA0000A1Z5" />
+            <Input name="gstin" defaultValue={supplierToEdit?.gstNumber} placeholder="22AAAAA0000A1Z5" />
           </div>
           <div className="pt-4 border-t border-brass/20">
-            <Button type="submit" className="w-full">Register Supplier</Button>
+            <Button type="submit" className="w-full">{supplierToEdit ? "Update Supplier" : "Register Supplier"}</Button>
           </div>
         </form>
       </Drawer>

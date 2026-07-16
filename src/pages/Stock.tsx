@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Plus } from "lucide-react"
 
 export function Stock() {
-  const { stock, isLoading, deleteStock, addStock } = useStock()
+  const { stock, isLoading, deleteStock, addStock, updateQuantity } = useStock()
   const { user } = useAuth()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -55,6 +55,13 @@ export function Stock() {
     }
   }
 
+  const handleEditStock = (item: any) => {
+    const val = window.prompt(`Edit stock quantity for ${item.varietyName} (Current: ${item.quantity}kg):`, String(item.quantity))
+    if (val !== null && !isNaN(Number(val))) {
+      updateQuantity(item.id, Number(val))
+    }
+  }
+
   return (
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex justify-between items-start">
@@ -89,11 +96,13 @@ export function Stock() {
                 varietyId={item.varietyId}
               />
               
-              <div className="flex justify-between items-center border-t border-brass/10 pt-3 mt-1">
-                <div className="flex gap-2">
+              <div className="border-t border-brass/20 pt-4 mt-4 flex justify-between items-center">
+                  <div className="text-ink font-medium">₹{item.price}/kg</div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => handleEditStock(item)}>EDIT</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
+                  </div>
                 </div>
-                <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
-              </div>
             </div>
           ))}
           {stock.length === 0 && (
@@ -133,6 +142,7 @@ export function Stock() {
                 <td className="p-4">₹{item.price}/kg</td>
                 <td className="p-4 text-ink/70">{item.lastUpdated}</td>
                 <td className="p-4 text-right">
+                  <Button variant="ghost" className="h-8 px-2 text-xs text-ink hover:bg-ink/10 mr-2" onClick={() => handleEditStock(item)}>EDIT</Button>
                   <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
                 </td>
               </tr>

@@ -132,7 +132,7 @@ export async function createSale(req: Request, res: Response) {
 // ── GET /api/sales/:id ────────────────────────────────────────────────────────
 export async function getSale(req: Request, res: Response) {
   const sale = await prisma.sale.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: {
       customer: true,
       items: { include: { variety: true } },
@@ -145,7 +145,7 @@ export async function getSale(req: Request, res: Response) {
 export async function updateSaleStatus(req: Request, res: Response) {
   const { paymentStatus } = UpdateSaleStatusSchema.parse(req.body)
   const sale = await prisma.sale.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { paymentStatus },
   })
   res.json(sale)
@@ -154,7 +154,7 @@ export async function updateSaleStatus(req: Request, res: Response) {
 // ── DELETE /api/sales/:id ─────────────────────────────────────────────────────
 export async function deleteSale(req: Request, res: Response) {
   await prisma.sale.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date() },
   })
   res.status(204).send()

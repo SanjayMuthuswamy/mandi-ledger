@@ -26,7 +26,7 @@ export async function createVariety(req: Request, res: Response) {
 
 export async function getVariety(req: Request, res: Response) {
   const variety = await prisma.riceVariety.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: {
       stocks: { include: { warehouse: true } },
     },
@@ -37,7 +37,7 @@ export async function getVariety(req: Request, res: Response) {
 export async function updateVariety(req: Request, res: Response) {
   const body = UpdateRiceVarietySchema.parse(req.body)
   const variety = await prisma.riceVariety.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: body,
   })
   res.json(variety)
@@ -45,7 +45,7 @@ export async function updateVariety(req: Request, res: Response) {
 
 export async function deleteVariety(req: Request, res: Response) {
   await prisma.riceVariety.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date() },
   })
   res.status(204).send()

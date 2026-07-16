@@ -35,7 +35,7 @@ export async function createCustomer(req: Request, res: Response) {
 
 export async function getCustomer(req: Request, res: Response) {
   const customer = await prisma.customer.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: {
       sales: {
         where: { deletedAt: null },
@@ -51,7 +51,7 @@ export async function getCustomer(req: Request, res: Response) {
 export async function updateCustomer(req: Request, res: Response) {
   const body = UpdateCustomerSchema.parse(req.body)
   const customer = await prisma.customer.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: body,
   })
   res.json(customer)
@@ -59,7 +59,7 @@ export async function updateCustomer(req: Request, res: Response) {
 
 export async function deleteCustomer(req: Request, res: Response) {
   await prisma.customer.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date() },
   })
   res.status(204).send()

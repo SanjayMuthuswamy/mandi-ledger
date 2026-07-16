@@ -21,7 +21,7 @@ export async function createWarehouse(req: Request, res: Response) {
 
 export async function getWarehouse(req: Request, res: Response) {
   const warehouse = await prisma.warehouse.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: { stocks: true }
   })
   res.json(warehouse)
@@ -30,7 +30,7 @@ export async function getWarehouse(req: Request, res: Response) {
 export async function updateWarehouse(req: Request, res: Response) {
   const body = UpdateWarehouseSchema.parse(req.body)
   const warehouse = await prisma.warehouse.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: body,
   })
   res.json(warehouse)
@@ -38,7 +38,7 @@ export async function updateWarehouse(req: Request, res: Response) {
 
 export async function deleteWarehouse(req: Request, res: Response) {
   await prisma.warehouse.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date() },
   })
   res.status(204).send()

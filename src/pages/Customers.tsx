@@ -8,11 +8,12 @@ import { useAuth } from "@/contexts/AuthContext"
 import { User, Phone, MapPin, Plus, Loader2 } from "lucide-react"
 
 export function Customers() {
-  const { customers, isLoading, addCustomer, deleteCustomer } = useCustomers(1, 100)
+  const { customers, isLoading, addCustomer, deleteCustomer, updateCustomer } = useCustomers(1, 100)
   const { user } = useAuth()
   const [view, setView] = useState<'cards' | 'list'>('cards')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
+  const [customerToEdit, setCustomerToEdit] = useState<any>(null)
 
   const { customer: customerDetails, isLoading: isDetailsLoading } = useCustomerDetails(selectedCustomer)
 
@@ -24,14 +25,21 @@ export function Customers() {
     const formData = new FormData(e.currentTarget)
     
     try {
-      await addCustomer({
+      const data = {
         name: formData.get('name') as string,
         phone: formData.get('phone') as string,
         address: formData.get('location') as string,
         gstNumber: formData.get('gstin') as string,
-      })
+      }
+      
+      if (customerToEdit) {
+        await updateCustomer(customerToEdit.id, data)
+      } else {
+        await addCustomer(data)
+      }
       
       setIsDrawerOpen(false)
+      setCustomerToEdit(null)
     } catch (err: any) {
       let msg = err.data?.error || "Failed to add customer."
       if (err.data?.issues) {
@@ -82,7 +90,10 @@ export function Customers() {
                 <div className="text-right flex flex-col items-end">
                   <div className="font-mono text-2xl text-ink">{(customerDetails?.sales?.reduce((acc: number, s: any) => acc + s.totalAmount, 0) || 0).toLocaleString()} <span className="text-sm text-ink/60">₹</span></div>
                   <div className="text-xs uppercase tracking-wider text-ink/50 font-sans font-medium mb-2">Total Value Purchased</div>
-                  <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteCustomer(customerDetails.id)}>DELETE</Button>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => { setCustomerToEdit(customerDetails); setIsDrawerOpen(true); }}>EDIT</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteCustomer(customerDetails.id)}>DELETE</Button>
+                  </div>
                 </div>
               </div>
             </>
@@ -151,7 +162,7 @@ export function Customers() {
               List
             </button>
           </div>
-          <Button onClick={() => setIsDrawerOpen(true)} className="hidden md:flex">Add Customer</Button>
+          <Button onClick={() => { setCustomerToEdit(null); setIsDrawerOpen(true); }} className="hidden md:flex">Add Customer</Button>
         </div>
       </div>
 
@@ -222,12 +233,12 @@ export function Customers() {
 
       <button 
         className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-turmeric text-ink rounded-full shadow-[2px_2px_0px_0px_rgba(20,32,26,1)] flex items-center justify-center z-30"
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={() => { setCustomerToEdit(null); setIsDrawerOpen(true); }}
       >
         <Plus size={24} />
       </button>
 
-      <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="Add Customer">
+      <Drawer isOpen={isDrawerOpen} onClose={() => { setIsDrawerOpen(false); setCustomerToEdit(null); }} title={customerToEdit ? "Edit Customer" : "Add Customer"}>
         <form onSubmit={handleAddCustomer} className="flex flex-col gap-6">
           {errorMsg && (
             <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm font-sans rounded-sm shadow-sm">
@@ -236,22 +247,22 @@ export function Customers() {
           )}
           <div className="space-y-2">
             <label className="font-medium text-sm">Customer Name</label>
-            <Input name="name" placeholder="e.g. Ramesh Kumar" required />
+            <Input name="name" defaultValue={customerToEdit?.name} placeholder="e.g. Ramesh Kumar" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Phone Number</label>
-            <Input name="phone" type="tel" placeholder="+91 " required />
+            <Input name="phone" type="tel" defaultValue={customerToEdit?.phone} placeholder="+91 " required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Location / City</label>
-            <Input name="location" placeholder="e.g. Chennai" required />
+            <Input name="location" defaultValue={customerToEdit?.address} placeholder="e.g. Chennai" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">GSTIN (Optional)</label>
-            <Input name="gstin" placeholder="22AAAAA0000A1Z5" />
+            <Input name="gstin" defaultValue={customerToEdit?.gstNumber} placeholder="22AAAAA0000A1Z5" />
           </div>
           <div className="pt-4 border-t border-brass/20">
-            <Button type="submit" className="w-full">Register Customer</Button>
+            <Button type="submit" className="w-full">{customerToEdit ? "Update Customer" : "Register Customer"}</Button>
           </div>
         </form>
       </Drawer>

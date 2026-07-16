@@ -51,7 +51,7 @@ export async function createUser(req: Request, res: Response) {
 
 export async function getUser(req: Request, res: Response) {
   const user = await prisma.user.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: { role: true }
   })
   const { passwordHash, ...safeUser } = user
@@ -61,7 +61,7 @@ export async function getUser(req: Request, res: Response) {
 export async function updateUser(req: Request, res: Response) {
   const body = UpdateUserSchema.parse(req.body)
   const user = await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: body,
     include: { role: true }
   })
@@ -71,7 +71,7 @@ export async function updateUser(req: Request, res: Response) {
 
 export async function deleteUser(req: Request, res: Response) {
   await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date(), isActive: false },
   })
   res.status(204).send()

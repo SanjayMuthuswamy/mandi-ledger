@@ -126,7 +126,7 @@ export async function createPurchase(req: Request, res: Response) {
 // ── GET /api/purchases/:id ────────────────────────────────────────────────────
 export async function getPurchase(req: Request, res: Response) {
   const purchase = await prisma.purchase.findFirstOrThrow({
-    where: { id: req.params.id, deletedAt: null },
+    where: { id: String(req.params.id), deletedAt: null },
     include: {
       supplier: true,
       items: { include: { variety: true } },
@@ -139,7 +139,7 @@ export async function getPurchase(req: Request, res: Response) {
 export async function updatePurchaseStatus(req: Request, res: Response) {
   const { paymentStatus } = UpdatePurchaseStatusSchema.parse(req.body)
   const purchase = await prisma.purchase.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { paymentStatus },
   })
   res.json(purchase)
@@ -148,7 +148,7 @@ export async function updatePurchaseStatus(req: Request, res: Response) {
 // ── DELETE /api/purchases/:id ─────────────────────────────────────────────────
 export async function deletePurchase(req: Request, res: Response) {
   await prisma.purchase.update({
-    where: { id: req.params.id },
+    where: { id: String(req.params.id) },
     data: { deletedAt: new Date() },
   })
   res.status(204).send()
