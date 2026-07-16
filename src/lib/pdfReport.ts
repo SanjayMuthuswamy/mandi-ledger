@@ -177,7 +177,7 @@ export function generatePDFReport(config: ReportConfig) {
     margin: { top: 80, bottom: 40 },
     didDrawPage: function (data) {
       // --- Footer ---
-      const pageCount = doc.internal.getNumberOfPages()
+      const pageCount = (doc as any).getNumberOfPages()
       const currentPage = data.pageNumber
       
       // Footer line
