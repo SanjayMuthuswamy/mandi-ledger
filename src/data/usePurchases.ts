@@ -71,6 +71,16 @@ export function usePurchases(page = 1, limit = 20) {
     },
   })
 
+  const updatePurchaseStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string, status: string }) => {
+      return await api.patch(`/purchases/${id}/status`, { paymentStatus: status })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+
   return {
     purchases: data?.data || [],
     meta: data?.meta,
@@ -78,5 +88,6 @@ export function usePurchases(page = 1, limit = 20) {
     error,
     addPurchase: (data: any) => addPurchaseMutation.mutateAsync(data),
     deletePurchase: (id: string) => deletePurchaseMutation.mutateAsync(id),
+    updateStatus: (id: string, status: string) => updatePurchaseStatusMutation.mutateAsync({ id, status }),
   }
 }

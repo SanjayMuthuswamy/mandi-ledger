@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation, Navigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Wheat, Users, ArrowDownToLine, ArrowUpFromLine, Layers, PieChart, LogOut } from 'lucide-react'
+import { LayoutDashboard, Wheat, Users, ArrowDownToLine, ArrowUpFromLine, Layers, PieChart, LogOut, Truck, Settings as SettingsIcon, Menu } from 'lucide-react'
+import { useState } from 'react'
+import { Drawer } from '@/components/ui/Drawer'
 
 import { useDashboard } from '@/data/useDashboard'
 import { useAuth } from '@/contexts/AuthContext'
@@ -28,32 +30,64 @@ function Ticker() {
           <span className="font-mono text-3xl">₹{(summary?.kpis?.totalSaleValue || 0).toLocaleString()}</span>
         </div>
       </div>
-      <div className="text-right shrink-0 pl-4 border-l border-brass/30 ml-4 flex items-center gap-4">
-        <div className="hidden md:block">
+      <div className="shrink-0 pl-4 border-l border-brass/30 ml-4 flex items-center gap-4">
+        <div className="hidden md:block text-right">
           <div className="font-display text-xl uppercase tracking-tighter text-stone">Mandi Board</div>
           <div className="font-mono text-xs text-stone/50">v1.2.0</div>
         </div>
-        <button onClick={logout} className="text-stone hover:text-ledger-red transition-colors md:hidden">
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-4 md:border-l md:border-brass/30 md:pl-4 md:ml-2">
+          <Link to="/settings" className="text-stone hover:text-turmeric transition-colors" title="Settings">
+            <SettingsIcon size={20} />
+          </Link>
+          <button onClick={logout} className="text-stone hover:text-ledger-red transition-colors" title="Logout">
+            <LogOut size={20} />
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/stock', label: 'Stock', icon: Wheat },
-  { path: '/purchases', label: 'Purchases', icon: ArrowDownToLine },
-  { path: '/sales', label: 'Sales', icon: ArrowUpFromLine },
-  { path: '/inventory', label: 'Inventory', icon: Layers, mobileHidden: true },
-  { path: '/suppliers', label: 'Suppliers', icon: Users },
-  { path: '/reports', label: 'Reports', icon: PieChart },
+const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    ]
+  },
+  {
+    label: 'Operations',
+    items: [
+      { path: '/stock', label: 'Stock', icon: Wheat },
+      { path: '/purchases', label: 'Purchases', icon: ArrowDownToLine },
+      { path: '/sales', label: 'Sales', icon: ArrowUpFromLine },
+    ]
+  },
+  {
+    label: 'Entities',
+    items: [
+      { path: '/customers', label: 'Customers', icon: Users },
+      { path: '/suppliers', label: 'Suppliers', icon: Truck },
+    ]
+  },
+  {
+    label: 'Management',
+    items: [
+      { path: '/inventory', label: 'Inventory', icon: Layers, mobileHidden: true },
+      { path: '/reports', label: 'Reports', icon: PieChart },
+    ]
+  }
 ]
+
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap(g => g.items)
 
 function LedgerIndex() {
   const location = useLocation()
   const { logout } = useAuth()
+  const [isMoreOpen, setIsMoreOpen] = useState(false)
+  
+  const visibleMobileItems = ALL_NAV_ITEMS.slice(0, 4)
+  const hiddenMobileItems = ALL_NAV_ITEMS.slice(4).filter(i => !i.mobileHidden)
   
   return (
     <>
@@ -62,43 +96,42 @@ function LedgerIndex() {
         <div className="px-8 mb-10">
           <h2 className="font-display text-ink uppercase tracking-tight text-xl drop-shadow-stamp origin-left inline-block">Ledger Index</h2>
         </div>
-        <div className="flex-1 flex flex-col gap-2">
-          {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "py-2.5 px-8 relative group transition-all flex items-center gap-4",
-                  isActive ? "text-ink font-display uppercase tracking-widest text-sm" : "text-ink/50 hover:text-ink font-sans text-sm"
-                )}
-              >
-                <item.icon size={16} className={isActive ? "text-turmeric" : ""} />
-                {item.label}
-              </Link>
-            )
-          })}
-        </div>
-        <div className="px-8 pb-2">
-          <button onClick={logout} className="py-2.5 flex items-center gap-4 text-ledger-red/70 hover:text-ledger-red transition-colors font-sans text-sm w-full">
-            <LogOut size={16} />
-            <span className="font-medium">Logout</span>
-          </button>
+        <div className="flex-1 flex flex-col gap-1 pb-4">
+          {NAV_GROUPS.map((group, gIdx) => (
+            <div key={group.label} className={cn("flex flex-col gap-1", gIdx > 0 && "mt-4")}>
+              <div className="px-8 mb-1 text-[10px] font-display uppercase tracking-widest text-ink/40">{group.label}</div>
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.path
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "py-2 px-8 relative group transition-all flex items-center gap-4",
+                      isActive ? "text-ink font-display uppercase tracking-widest text-sm bg-ink/5" : "text-ink/60 hover:text-ink font-sans text-sm hover:bg-ink/5"
+                    )}
+                  >
+                    <item.icon size={16} className={isActive ? "text-turmeric" : ""} />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
         </div>
       </nav>
 
       {/* Mobile Bottom Tab Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-stone border-t border-brass/20 z-40 pb-safe">
         <div className="flex justify-around items-center h-16">
-          {NAV_ITEMS.filter(item => !item.mobileHidden).map((item) => {
+          {visibleMobileItems.map((item) => {
             const isActive = location.pathname === item.path
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors relative",
+                  "flex flex-col items-center justify-center w-[20%] h-full gap-1 transition-colors relative",
                   isActive ? "text-turmeric" : "text-ink/50"
                 )}
               >
@@ -110,8 +143,45 @@ function LedgerIndex() {
               </Link>
             )
           })}
+          
+          <button
+            onClick={() => setIsMoreOpen(true)}
+            className="flex flex-col items-center justify-center w-[20%] h-full gap-1 transition-colors relative text-ink/50"
+          >
+            <Menu size={20} />
+            <span className="text-[10px] font-medium">Menu</span>
+          </button>
         </div>
       </nav>
+
+      <Drawer isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} title="Menu">
+        <div className="flex flex-col gap-2 pb-6">
+          {hiddenMobileItems.map((item) => {
+            const isActive = location.pathname === item.path
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMoreOpen(false)}
+                className={cn(
+                  "flex items-center gap-4 py-4 px-2 border-b border-brass/10 transition-colors",
+                  isActive ? "text-turmeric" : "text-ink/70"
+                )}
+              >
+                <item.icon size={20} />
+                <span className="font-medium text-sm tracking-wide uppercase font-display">{item.label}</span>
+              </Link>
+            )
+          })}
+          <button 
+            onClick={() => { setIsMoreOpen(false); logout(); }} 
+            className="flex items-center gap-4 py-4 px-2 transition-colors text-ledger-red/70 hover:text-ledger-red mt-4"
+          >
+            <LogOut size={20} />
+            <span className="font-medium text-sm tracking-wide uppercase font-display">Logout</span>
+          </button>
+        </div>
+      </Drawer>
     </>
   )
 }

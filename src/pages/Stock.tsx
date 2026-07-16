@@ -5,35 +5,53 @@ import { GrainGauge } from "@/components/ui/GrainGauge"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
 import { Input } from "@/components/ui/Input"
+import { useAuth } from "@/contexts/AuthContext"
 import { Plus } from "lucide-react"
 
 export function Stock() {
-  const { stock, isLoading, updateQuantity, deleteStock, addStock } = useStock()
+  const { stock, isLoading, deleteStock, addStock } = useStock()
+  const { user } = useAuth()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   const handleAddStock = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    setErrorMsg('')
+    const form = e.currentTarget
+    const formData = new FormData(form)
 
-    await addStock({
-      varietyName: String(formData.get("varietyName")),
-      varietyId: formData.get("varietyId") as VarietyId,
-      quantity: Number(formData.get("quantity")),
-      price: Number(formData.get("price")),
-      threshold: Number(formData.get("threshold") || 0),
-      max: Number(formData.get("max") || 10000),
-    })
+    try {
+      await addStock({
+        varietyName: String(formData.get("varietyName")),
+        varietyId: formData.get("varietyId") as VarietyId,
+        quantity: Number(formData.get("quantity")),
+        price: Number(formData.get("price")),
+        threshold: Number(formData.get("threshold") || 0),
+        max: Number(formData.get("max") || 10000),
+      })
 
-    e.currentTarget.reset()
-    setIsDrawerOpen(false)
+      form.reset()
+      setIsDrawerOpen(false)
+    } catch (err: any) {
+      let msg = err.data?.error || err.message || "Failed to add stock. Please try again."
+      if (err.data?.issues) {
+         const issuesStr = Object.entries(err.data.issues)
+            .map(([key, value]) => `${key}: ${(value as string[]).join(', ')}`)
+            .join(' | ')
+         msg += ` (${issuesStr})`
+      }
+      setErrorMsg(msg)
+    }
   }
 
-  const handleVoidStock = (id: string) => {
-    const pwd = window.prompt("Admin action required. Please enter password to void this stock entry:")
-    if (pwd === "Admin@1234") {
+  const handleDeleteStock = (id: string) => {
+    if (user?.role !== 'ADMIN') {
+      alert("Access Denied: Only Administrators can delete stock entries.")
+      return
+    }
+    const confirmed = window.confirm("Are you sure you want to delete this stock entry? This cannot be undone.")
+    if (confirmed) {
       deleteStock(id)
-    } else if (pwd !== null) {
-      alert("Incorrect password. Action denied.")
     }
   }
 
@@ -73,10 +91,8 @@ export function Stock() {
               
               <div className="flex justify-between items-center border-t border-brass/10 pt-3 mt-1">
                 <div className="flex gap-2">
-                  <Button variant="ghost" className="h-8 px-2 text-xs border border-brass/20" onClick={() => updateQuantity(item.id, item.quantity + 100)}>+100</Button>
-                  <Button variant="ghost" className="h-8 px-2 text-xs border border-brass/20" onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 100))}>-100</Button>
                 </div>
-                <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red" onClick={() => handleVoidStock(item.id)}>VOID</Button>
+                <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
               </div>
             </div>
           ))}
@@ -117,9 +133,7 @@ export function Stock() {
                 <td className="p-4">₹{item.price}/kg</td>
                 <td className="p-4 text-ink/70">{item.lastUpdated}</td>
                 <td className="p-4 text-right">
-                  <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => updateQuantity(item.id, item.quantity + 100)}>+100</Button>
-                  <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 100))}>-100</Button>
-                  <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidStock(item.id)}>VOID</Button>
+                  <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
                 </td>
               </tr>
             ))}
@@ -142,8 +156,13 @@ export function Stock() {
         <Plus size={24} />
       </button>
 
-      <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="Add Stock">
+      <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setErrorMsg('');}} title="Add Stock">
         <form onSubmit={handleAddStock} className="flex flex-col gap-6">
+          {errorMsg && (
+            <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm flex items-start gap-2 rounded-sm font-medium">
+              <span className="mt-0.5">⚠</span> {errorMsg}
+            </div>
+          )}
           <div className="space-y-2">
             <label className="font-medium text-sm">Rice Variety Name</label>
             <Input name="varietyName" placeholder="e.g. Sona Masuri" required />

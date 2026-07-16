@@ -9,6 +9,8 @@ import { Purchases } from '@/pages/Purchases'
 import { Sales } from '@/pages/Sales'
 import { Inventory } from '@/pages/Inventory'
 import { Reports } from '@/pages/Reports'
+import { Customers } from '@/pages/Customers'
+import { Settings } from '@/pages/Settings'
 
 function App() {
   return (
@@ -21,8 +23,10 @@ function App() {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/purchases" element={<Purchases />} />
           <Route path="/sales" element={<Sales />} />
+          <Route path="/customers" element={<Customers />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppLayout>

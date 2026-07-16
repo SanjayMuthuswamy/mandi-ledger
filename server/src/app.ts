@@ -14,6 +14,8 @@ import { customerRouter } from './routes/customer.routes.js'
 import { riceVarietyRouter } from './routes/riceVariety.routes.js'
 import { dashboardRouter } from './routes/dashboard.routes.js'
 import { reportRouter } from './routes/report.routes.js'
+import { warehouseRouter } from './routes/warehouse.routes.js'
+import { userRouter } from './routes/user.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { notFound } from './middleware/notFound.js'
 
@@ -46,6 +48,8 @@ app.use('/api/customers', customerRouter)
 app.use('/api/rice-varieties', riceVarietyRouter)
 app.use('/api/dashboard', dashboardRouter)
 app.use('/api/reports', reportRouter)
+app.use('/api/warehouses', warehouseRouter)
+app.use('/api/users', userRouter)
 
 // ── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound)

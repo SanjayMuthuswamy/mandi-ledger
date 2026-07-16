@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/Input"
 import { useVarieties } from "@/data/useVarieties"
 import { usePurchases } from "@/data/usePurchases"
 import { useSuppliers } from "@/data/useSuppliers"
+import { useAuth } from "@/contexts/AuthContext"
 import { Plus, Wheat, Loader2 } from "lucide-react"
 
 export function Purchases() {
   const { purchases, isLoading: isPurchasesLoading, addPurchase, deletePurchase } = usePurchases(1, 100)
   const { varieties, isLoading: isVarietiesLoading } = useVarieties()
   const { suppliers, isLoading: isSuppliersLoading } = useSuppliers(1, 100)
+  const { user } = useAuth()
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedVariety, setSelectedVariety] = useState('')
@@ -59,12 +61,14 @@ export function Purchases() {
     }
   }
 
-  const handleVoidPurchase = (id: string) => {
-    const pwd = window.prompt("Admin action required. Please enter password to void this purchase:")
-    if (pwd === "Admin@1234") {
+  const handleDeletePurchase = (id: string) => {
+    if (user?.role !== 'ADMIN') {
+      alert("Access Denied: Only Administrators can delete purchase records.")
+      return
+    }
+    const confirmed = window.confirm("Are you sure you want to delete this purchase? Stock will NOT be automatically reverted.")
+    if (confirmed) {
       deletePurchase(id)
-    } else if (pwd !== null) {
-      alert("Incorrect password. Action denied.")
     }
   }
 
@@ -116,7 +120,7 @@ export function Purchases() {
                     <div className="text-paddy font-mono font-medium text-lg">
                       +{purchase.items[0]?.quantity.toLocaleString()} <span className="text-xs">kg</span>
                     </div>
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidPurchase(purchase.id)}>VOID</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeletePurchase(purchase.id)}>DELETE</Button>
                   </div>
                 </div>
               </div>
@@ -158,7 +162,7 @@ export function Purchases() {
                   <td className="p-4 text-right">{purchase.items[0]?.rate.toFixed(2)}</td>
                   <td className="p-4 text-right font-medium text-ink">{purchase.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-right">
-                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidPurchase(purchase.id)}>VOID</Button>
+                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeletePurchase(purchase.id)}>DELETE</Button>
                   </td>
                 </tr>
               ))}

@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/Input"
 import { useSales } from "@/data/useSales"
 import { useVarieties } from "@/data/useVarieties"
 import { useCustomers } from "@/data/useCustomers"
+import { useAuth } from "@/contexts/AuthContext"
 import { Plus, ShoppingCart, Loader2 } from "lucide-react"
 
 export function Sales() {
   const { sales, isLoading: isSalesLoading, addSale, deleteSale } = useSales(1, 100)
   const { varieties, isLoading: isVarietiesLoading } = useVarieties()
   const { customers, isLoading: isCustomersLoading } = useCustomers(1, 100)
+  const { user } = useAuth()
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedVariety, setSelectedVariety] = useState('')
@@ -68,12 +70,14 @@ export function Sales() {
     }
   }
 
-  const handleVoidSale = (id: string) => {
-    const pwd = window.prompt("Admin action required. Please enter password to void this sale:")
-    if (pwd === "Admin@1234") {
+  const handleDeleteSale = (id: string) => {
+    if (user?.role !== 'ADMIN') {
+      alert("Access Denied: Only Administrators can delete sales records.")
+      return
+    }
+    const confirmed = window.confirm("Are you sure you want to delete this sale? Stock will NOT be automatically reverted.")
+    if (confirmed) {
       deleteSale(id)
-    } else if (pwd !== null) {
-      alert("Incorrect password. Action denied.")
     }
   }
 
@@ -125,7 +129,7 @@ export function Sales() {
                     <div className="text-ledger-red font-mono font-medium text-lg">
                       -{sale.items[0]?.quantity.toLocaleString()} <span className="text-xs">kg</span>
                     </div>
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidSale(sale.id)}>VOID</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSale(sale.id)}>DELETE</Button>
                   </div>
                 </div>
               </div>
@@ -164,7 +168,7 @@ export function Sales() {
                   <td className="p-4 text-right">{sale.items[0]?.rate.toFixed(2)}</td>
                   <td className="p-4 text-right font-medium text-ink">{sale.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-right">
-                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleVoidSale(sale.id)}>VOID</Button>
+                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSale(sale.id)}>DELETE</Button>
                   </td>
                 </tr>
               ))}

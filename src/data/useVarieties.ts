@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 
 export interface RiceVariety {
@@ -13,6 +13,7 @@ export interface RiceVariety {
 }
 
 export function useVarieties() {
+  const queryClient = useQueryClient()
   const { data, isLoading, error } = useQuery({
     queryKey: ['varieties'],
     queryFn: async () => {
@@ -21,9 +22,39 @@ export function useVarieties() {
     },
   })
 
+  const addVarietyMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await api.post('/rice-varieties', data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['varieties'] })
+    },
+  })
+
+  const updateVarietyMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: any }) => {
+      return await api.put(`/rice-varieties/${id}`, data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['varieties'] })
+    },
+  })
+
+  const deleteVarietyMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.delete(`/rice-varieties/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['varieties'] })
+    },
+  })
+
   return {
     varieties: data || [],
     isLoading,
     error,
+    addVariety: (data: any) => addVarietyMutation.mutateAsync(data),
+    updateVariety: (id: string, data: any) => updateVarietyMutation.mutateAsync({ id, data }),
+    deleteVariety: (id: string) => deleteVarietyMutation.mutateAsync(id)
   }
 }

@@ -54,13 +54,23 @@ export function useSuppliers(page = 1, limit = 20) {
     }
   })
 
+  const deleteSupplierMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.delete(`/suppliers/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+    }
+  })
+
   return {
     suppliers: data?.data || [],
     meta: data?.meta,
     isLoading,
     error,
     addSupplier: (data: any) => addSupplierMutation.mutateAsync(data),
-    updateSupplier: (id: string, data: any) => updateSupplierMutation.mutateAsync({ id, data })
+    updateSupplier: (id: string, data: any) => updateSupplierMutation.mutateAsync({ id, data }),
+    deleteSupplier: (id: string) => deleteSupplierMutation.mutateAsync(id)
   }
 }
 
