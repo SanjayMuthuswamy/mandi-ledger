@@ -226,10 +226,7 @@ export function Login() {
         </div>
       </div>
 
-      {/* Demo Credentials Alert - For prototype only */}
-      <div className="fixed bottom-2 left-2 md:bottom-4 md:left-4 bg-[#F8F9F3] border border-brass/30 shadow-md p-2 md:p-3 rounded-sm font-mono text-[10px] md:text-xs text-ink/70 z-50 pointer-events-none opacity-50">
-        Demo: admin / password123
-      </div>
+
     </div>
   )
 }
