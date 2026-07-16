@@ -66,7 +66,7 @@ export async function profitLoss(req: Request, res: Response) {
     where: { id: { in: varietyIds } },
     select: { id: true, name: true, code: true },
   })
-  const varietyMap = new Map(varieties.map((v) => [v.id, v]))
+  const varietyMap = new Map<string, { id: string; name: string; code: string }>(varieties.map((v) => [v.id, v]))
 
   const byVariety = varietyIds.map((vid) => {
     const variety = varietyMap.get(vid)
@@ -200,7 +200,7 @@ export async function topSuppliers(req: Request, res: Response) {
     where: { id: { in: purchaseIds } },
     select: { id: true, supplier: { select: { id: true, name: true } } },
   })
-  const purchaseToSupplier = new Map(
+  const purchaseToSupplier = new Map<string, { id: string; name: string }>(
     purchasesWithSupplier.map((p) => [p.id, p.supplier])
   )
 
@@ -253,7 +253,7 @@ export async function topCustomers(req: Request, res: Response) {
     where: { id: { in: saleIds } },
     select: { id: true, customer: { select: { id: true, name: true } } },
   })
-  const saleToCustomer = new Map(salesWithCustomer.map((s) => [s.id, s.customer]))
+  const saleToCustomer = new Map<string, { id: string; name: string }>(salesWithCustomer.map((s) => [s.id, s.customer]))
 
   const customerMap = new Map<
     string,
