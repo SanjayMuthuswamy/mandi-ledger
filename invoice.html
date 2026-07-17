@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tax Invoice</title>
+  <link rel="stylesheet" href="invoice.css">
+</head>
+<body>
+  <div class="invoice-container">
+    <!-- Invoice Outer Border Wrapper -->
+    <div class="invoice-border-box">
+      
+      <!-- Top Title -->
+      <div class="invoice-title-container">
+        <h1 class="invoice-title">TAX INVOICE</h1>
+      </div>
+
+      <!-- Header Section: Logo & Company Details -->
+      <div class="header-section">
+        <div class="company-logo-container">
+          <img id="company-logo" src="{{company_logo}}" alt="Company Logo" onerror="this.style.display='none';">
+        </div>
+        <div class="company-details">
+          <h2 id="company-name" class="company-name">{{company_name}}</h2>
+          <div id="company-address" class="company-address">{{company_address}}</div>
+          <div class="company-gst"><strong>GSTIN:</strong> <span id="company-gstin">{{company_gstin}}</span></div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="section-divider"></div>
+
+      <!-- Billing Info and Invoice Details Grid -->
+      <div class="billing-details-grid">
+        <!-- Left: Bill To -->
+        <div class="bill-to-box">
+          <div class="section-header">BILL TO</div>
+          <div class="billing-info-content">
+            <h3 id="customer-name" class="customer-name">{{customer_name}}</h3>
+            <div id="customer-address" class="customer-address">{{customer_address}}</div>
+            <div class="customer-gst"><strong>GSTIN:</strong> <span id="customer-gstin">{{customer_gstin}}</span></div>
+          </div>
+        </div>
+
+        <!-- Right: Invoice Metadata -->
+        <div class="invoice-metadata-box">
+          <table class="metadata-table">
+            <tr>
+              <th>Invoice No:</th>
+              <td id="invoice-number">{{invoice_number}}</td>
+            </tr>
+            <tr>
+              <th>Invoice Date:</th>
+              <td id="invoice-date">{{invoice_date}}</td>
+            </tr>
+            <tr>
+              <th>DC / PO No:</th>
+              <td id="po-number">{{po_number}}</td>
+            </tr>
+            <tr>
+              <th>Vehicle No:</th>
+              <td id="vehicle-number">{{vehicle_number}}</td>
+            </tr>
+            <tr>
+              <th>Place of Supply:</th>
+              <td id="place-of-supply">{{place_of_supply}}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Line Items Table -->
+      <div class="items-table-container">
+        <table id="items-table" class="items-table">
+          <thead>
+            <tr>
+              <th class="col-sno">S.No</th>
+              <th class="col-desc">Item Description</th>
+              <th class="col-hsn">HSN/SAC</th>
+              <th class="col-qty">Qty (Bags)</th>
+              <th class="col-rate">Rate / Bag</th>
+              <th class="col-amount">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="items-body">
+            <!-- Dynamic Rows will be inserted here -->
+            {{items}}
+          </tbody>
+          <tfoot>
+            <!-- Totals inside table -->
+            <tr class="totals-row">
+              <td colspan="3" class="text-right font-bold">Total Quantity:</td>
+              <td id="total-quantity" class="text-right font-bold">{{total_quantity}}</td>
+              <td class="text-right font-bold">Sub Total:</td>
+              <td id="subtotal" class="text-right font-bold">₹{{subtotal}}</td>
+            </tr>
+            <tr class="final-total-row">
+              <td colspan="5" class="text-right font-bold">GRAND TOTAL:</td>
+              <td id="total" class="text-right font-bold">₹{{total}}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Amount in Words -->
+      <div class="amount-in-words-section">
+        <strong>Total In Words:</strong> <span id="amount-in-words">{{amount_in_words}}</span>
+      </div>
+
+      <!-- Footer Divider -->
+      <div class="section-divider"></div>
+
+      <!-- Bottom Info Grid: Bank details & Signature -->
+      <div class="footer-bottom-grid">
+        <!-- Left: Payment / Bank details -->
+        <div class="bank-details-box">
+          <div class="footer-section-header">Bank Details</div>
+          <table class="bank-details-table">
+            <tr>
+              <th>Bank Name:</th>
+              <td id="bank-name">{{bank_name}}</td>
+            </tr>
+            <tr>
+              <th>Account No:</th>
+              <td id="account-number">{{account_number}}</td>
+            </tr>
+            <tr>
+              <th>IFSC Code:</th>
+              <td id="ifsc">{{ifsc}}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Right: Authorized Signatory -->
+        <div class="signature-box">
+          <div class="company-signature-declaration">
+            For <span id="signatory-company-name">{{company_name}}</span>
+          </div>
+          <div class="signature-space"></div>
+          <div class="signature-line">
+            <span id="authorized-signatory">{{authorized_signatory}}</span>
+            <div class="signature-title">Authorized Signatory</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
