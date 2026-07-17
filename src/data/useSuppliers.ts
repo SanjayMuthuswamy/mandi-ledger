@@ -49,8 +49,9 @@ export function useSuppliers(page = 1, limit = 20) {
     mutationFn: async ({ id, data }: { id: string, data: any }) => {
         return await api.put(`/suppliers/${id}`, data)
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
         queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+        queryClient.invalidateQueries({ queryKey: ['supplier', variables.id] })
     }
   })
 

@@ -141,6 +141,35 @@ export function Suppliers() {
             </div>
           </div>
         )}
+
+        <Drawer isOpen={isDrawerOpen} onClose={() => { setIsDrawerOpen(false); setSupplierToEdit(null); }} title={supplierToEdit ? "Edit Supplier" : "Add Supplier"}>
+          <form onSubmit={handleAddSupplier} className="flex flex-col gap-6">
+            {errorMsg && (
+              <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm font-sans rounded-sm shadow-sm">
+                {errorMsg}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="font-medium text-sm">Supplier Name</label>
+              <Input name="name" defaultValue={supplierToEdit?.name} placeholder="e.g. Rajesh Traders" required />
+            </div>
+            <div className="space-y-2">
+              <label className="font-medium text-sm">Phone Number</label>
+              <Input name="phone" type="tel" defaultValue={supplierToEdit?.phone} placeholder="+91 " required />
+            </div>
+            <div className="space-y-2">
+              <label className="font-medium text-sm">Location / City</label>
+              <Input name="location" defaultValue={supplierToEdit?.address} placeholder="e.g. Tiruppur" required />
+            </div>
+            <div className="space-y-2">
+              <label className="font-medium text-sm">GSTIN (Optional)</label>
+              <Input name="gstin" defaultValue={supplierToEdit?.gstNumber} placeholder="22AAAAA0000A1Z5" />
+            </div>
+            <div className="pt-4 border-t border-brass/20">
+              <Button type="submit" className="w-full">{supplierToEdit ? "Update Supplier" : "Register Supplier"}</Button>
+            </div>
+          </form>
+        </Drawer>
       </div>
     )
   }
