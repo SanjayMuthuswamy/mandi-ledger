@@ -199,7 +199,7 @@ function renderInvoice(data) {
   const statusBadge = document.getElementById('invoice-status');
   if (statusBadge) {
     const s = data.invoice_status || data.paymentStatus || 'PENDING';
-    statusBadge.innerText = s;
+    statusBadge.innerText = s === 'PENDING' ? 'UNPAID' : s;
     statusBadge.className = 'status-badge status-' + s;
   }
 
@@ -337,7 +337,7 @@ function renderInvoice(data) {
   const payStatusEl = document.getElementById('pay-status');
   if (payStatusEl) {
     const ps = data.payment_status || data.invoice_status || 'PENDING';
-    payStatusEl.innerText = ps;
+    payStatusEl.innerText = ps === 'PENDING' ? 'UNPAID' : ps;
     payStatusEl.className = 'status-badge status-' + ps;
   }
 

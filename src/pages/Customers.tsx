@@ -2,7 +2,7 @@ import { useState, useMemo } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
-import { DetailDrawer, DetailRow, DrawerSection, DrawerActionBar } from "@/components/ui/DetailDrawer"
+import { DetailDrawer, DetailRow, DrawerSection, DrawerActionBar, StatusBadge } from "@/components/ui/DetailDrawer"
 import { Input } from "@/components/ui/Input"
 import { useCustomers, useCustomerDetails } from "@/data/useCustomers"
 import { useAuth } from "@/contexts/AuthContext"
@@ -288,11 +288,7 @@ function SalesHistoryModal({ customerId, onClose }: {
                             <td className="p-4 text-right text-ink/80">{sale.items?.[0]?.quantity?.toLocaleString()} bags</td>
                             <td className="p-4 text-right text-paddy font-bold">₹{sale.totalAmount?.toLocaleString()}</td>
                             <td className="p-4 text-center">
-                              <span className={`inline-flex px-2 py-0.5 rounded-sm border text-[9px] uppercase tracking-widest font-sans font-bold ${
-                                sale.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20'
-                              }`}>
-                                {sale.paymentStatus}
-                              </span>
+                              <StatusBadge status={sale.paymentStatus} />
                             </td>
                           </tr>
                         ))}

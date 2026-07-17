@@ -1,6 +1,6 @@
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Download, Printer } from "lucide-react"
+import { X, Download, Printer, Check, Clock, AlertCircle, AlertTriangle } from "lucide-react"
 
 interface DetailDrawerProps {
   isOpen: boolean
@@ -84,13 +84,33 @@ export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     PAID: 'text-paddy bg-paddy/10 border-paddy/20',
     PENDING: 'text-turmeric bg-turmeric/10 border-turmeric/20',
+    UNPAID: 'text-turmeric bg-turmeric/10 border-turmeric/20',
     PARTIAL: 'text-blue-600 bg-blue-50 border-blue-200',
     OVERDUE: 'text-ledger-red bg-ledger-red/10 border-ledger-red/20',
   }
   const cls = map[status] ?? 'text-ink/60 bg-ink/5 border-ink/10'
+  const displayStatus = status === 'PENDING' ? 'UNPAID' : status
+
+  const getIcon = () => {
+    switch (status) {
+      case 'PAID':
+        return <Check size={11} className="mr-1 shrink-0" />
+      case 'PENDING':
+      case 'UNPAID':
+        return <Clock size={11} className="mr-1 shrink-0" />
+      case 'PARTIAL':
+        return <AlertCircle size={11} className="mr-1 shrink-0" />
+      case 'OVERDUE':
+        return <AlertTriangle size={11} className="mr-1 shrink-0" />
+      default:
+        return null
+    }
+  }
+
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-sm border text-[10px] font-sans uppercase tracking-widest font-bold ${cls}`}>
-      {status}
+      {getIcon()}
+      {displayStatus}
     </span>
   )
 }

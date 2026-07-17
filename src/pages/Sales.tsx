@@ -130,7 +130,7 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
                     }}
                     className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
                   >
-                    <option value="PENDING">PENDING</option>
+                    <option value="PENDING">UNPAID</option>
                     <option value="PARTIAL">PARTIAL</option>
                     <option value="PAID">PAID</option>
                     <option value="OVERDUE">OVERDUE</option>
