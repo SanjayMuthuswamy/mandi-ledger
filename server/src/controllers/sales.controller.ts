@@ -82,11 +82,12 @@ export async function createSale(req: Request, res: Response) {
         include: { variety: true },
       })
 
-      if (!stockEntry || stockEntry.quantity < item.quantity) {
+      const requestedKg = item.quantity * (item.kgPerBag ?? 26)
+      if (!stockEntry || stockEntry.quantity < requestedKg) {
         const available = stockEntry?.quantity ?? 0
         const varietyName = stockEntry?.variety.name ?? item.riceVarietyId
         throw Object.assign(
-          new Error(`Insufficient stock for ${varietyName}. Available: ${available} kg, Requested: ${item.quantity} kg`),
+          new Error(`Insufficient stock for ${varietyName}. Available: ${available} kg, Requested: ${requestedKg} kg`),
           { statusCode: 422 }
         )
       }
@@ -98,7 +99,7 @@ export async function createSale(req: Request, res: Response) {
             riceVarietyId: item.riceVarietyId,
           },
         },
-        data: { quantity: { decrement: item.quantity } },
+        data: { quantity: { decrement: requestedKg } },
       })
     }
 
@@ -114,6 +115,7 @@ export async function createSale(req: Request, res: Response) {
           create: body.items.map((item) => ({
             riceVarietyId: item.riceVarietyId,
             quantity: item.quantity,
+            kgPerBag: item.kgPerBag ?? 26,
             rate: item.rate,
             total: item.quantity * item.rate,
           })),

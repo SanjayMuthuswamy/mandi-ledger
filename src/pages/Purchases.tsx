@@ -19,19 +19,18 @@ export function Purchases() {
   const [selectedVariety, setSelectedVariety] = useState('')
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [quantity, setQuantity] = useState('')
-  const [unit, setUnit] = useState<'kg' | 'quintal' | 'ton'>('kg')
+  const [kgPerBag, setKgPerBag] = useState('26')
   const [rate, setRate] = useState('')
-
+ 
   const [errorMsg, setErrorMsg] = useState('')
-
+ 
   const handleRecordPurchase = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
     
-    let actualKg = Number(quantity)
-    if (unit === 'quintal') actualKg *= 100
-    if (unit === 'ton') actualKg *= 1000
-
+    const qtyBags = Number(quantity)
+    const kgWeight = Number(kgPerBag) || 26
+ 
     if (selectedVariety && selectedSupplier) {
       try {
         await addPurchase({
@@ -40,7 +39,8 @@ export function Purchases() {
           paymentStatus: 'PENDING',
           items: [{
             riceVarietyId: selectedVariety,
-            quantity: actualKg,
+            quantity: qtyBags,
+            kgPerBag: kgWeight,
             rate: Number(rate)
           }]
         })
@@ -48,6 +48,7 @@ export function Purchases() {
         setIsDrawerOpen(false)
         setQuantity('')
         setRate('')
+        setKgPerBag('26')
       } catch (err: any) {
         let msg = err.data?.error || "Failed to record purchase. Please try again."
         if (err.data?.issues) {
@@ -60,7 +61,7 @@ export function Purchases() {
       }
     }
   }
-
+ 
   const handleDeletePurchase = (id: string) => {
     if (user?.role !== 'ADMIN') {
       alert("Access Denied: Only Administrators can delete purchase records.")
@@ -71,16 +72,12 @@ export function Purchases() {
       deletePurchase(id)
     }
   }
-
+ 
   const selectedVarietyDetails = useMemo(() => 
     varieties.find(v => v.id === selectedVariety), 
   [varieties, selectedVariety])
   
-  let computedTotal = 0
-  let displayQuantity = Number(quantity) || 0
-  if (unit === 'quintal') displayQuantity *= 100
-  if (unit === 'ton') displayQuantity *= 1000
-  computedTotal = displayQuantity * (Number(rate) || 0)
+  const computedTotal = (Number(quantity) || 0) * (Number(rate) || 0)
 
   return (
     <div className="flex flex-col gap-8 pb-12">
@@ -105,7 +102,7 @@ export function Purchases() {
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-lg font-bold text-ink">₹{purchase.totalAmount.toLocaleString()}</div>
-                    <div className="text-xs text-ink/70 font-mono">₹{purchase.items[0]?.rate.toFixed(2)}/kg</div>
+                    <div className="text-xs text-ink/70 font-mono">₹{purchase.items[0]?.rate.toFixed(2)}/bag (₹{((purchase.items[0]?.rate ?? 0) / (purchase.items[0]?.kgPerBag ?? 26)).toFixed(2)}/kg)</div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-1">
@@ -118,7 +115,7 @@ export function Purchases() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-paddy font-mono font-medium text-lg">
-                      +{purchase.items[0]?.quantity.toLocaleString()} <span className="text-xs">kg</span>
+                      +{purchase.items[0]?.quantity.toLocaleString()} <span className="text-xs">Bags ({purchase.items[0]?.kgPerBag ?? 26}kg)</span>
                     </div>
                     <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeletePurchase(purchase.id)}>DELETE</Button>
                   </div>
@@ -142,8 +139,8 @@ export function Purchases() {
                 <th className="p-4">Date</th>
                 <th className="p-4">Supplier</th>
                 <th className="p-4">Variety</th>
-                <th className="p-4 text-right">Quantity (kg)</th>
-                <th className="p-4 text-right">Rate (₹)</th>
+                <th className="p-4 text-right">Quantity</th>
+                <th className="p-4 text-right">Rate (₹/bag)</th>
                 <th className="p-4 text-right">Total (₹)</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -158,9 +155,14 @@ export function Purchases() {
                     <div className={`w-3 h-3 rounded-full bg-variety-${purchase.items[0]?.variety?.code}`} />
                     {purchase.items[0]?.variety?.name}
                   </td>
-                  <td className="p-4 text-right text-paddy font-medium">+{purchase.items[0]?.quantity.toLocaleString()}</td>
-                  <td className="p-4 text-right">{purchase.items[0]?.rate.toFixed(2)}</td>
-                  <td className="p-4 text-right font-medium text-ink">{purchase.totalAmount.toLocaleString()}</td>
+                  <td className="p-4 text-right text-paddy font-medium">
+                    +{purchase.items[0]?.quantity.toLocaleString()} Bags ({purchase.items[0]?.kgPerBag ?? 26}kg)
+                  </td>
+                  <td className="p-4 text-right font-mono">
+                    {purchase.items[0]?.rate.toFixed(2)}
+                    <span className="block text-[10px] text-ink/65">(₹{((purchase.items[0]?.rate ?? 0) / (purchase.items[0]?.kgPerBag ?? 26)).toFixed(2)}/kg)</span>
+                  </td>
+                  <td className="p-4 text-right font-mono font-medium text-ink">{purchase.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-right">
                     <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeletePurchase(purchase.id)}>DELETE</Button>
                   </td>
@@ -226,30 +228,34 @@ export function Purchases() {
           </div>
 
           <div className="space-y-2">
-            <label className="font-medium text-sm flex justify-between">
-              Quantity
-              <div className="flex gap-2 text-xs font-mono">
-                <button type="button" onClick={() => setUnit('kg')} className={unit === 'kg' ? 'text-ink font-bold' : 'text-ink/40'}>KG</button>
-                <button type="button" onClick={() => setUnit('quintal')} className={unit === 'quintal' ? 'text-ink font-bold' : 'text-ink/40'}>QTL</button>
-                <button type="button" onClick={() => setUnit('ton')} className={unit === 'ton' ? 'text-ink font-bold' : 'text-ink/40'}>TON</button>
-              </div>
-            </label>
-            <div className="relative">
-              <Input 
-                type="number" 
-                min="1" 
-                value={quantity} 
-                onChange={(e) => setQuantity(e.target.value)} 
-                placeholder="0" 
-                required 
-                className="font-mono pr-12"
-              />
-              <span className="absolute right-3 top-2.5 text-ink/50 text-sm font-mono">{unit}</span>
-            </div>
+            <label className="font-medium text-sm">Quantity (Bags)</label>
+            <Input 
+              type="number" 
+              min="1" 
+              value={quantity} 
+              onChange={(e) => setQuantity(e.target.value)} 
+              placeholder="0" 
+              required 
+              className="font-mono"
+            />
           </div>
 
           <div className="space-y-2">
-            <label className="font-medium text-sm">Rate (₹ per kg)</label>
+            <label className="font-medium text-sm">Purchase Kg/Bag</label>
+            <select
+              className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+              value={kgPerBag}
+              onChange={(e) => setKgPerBag(e.target.value)}
+              required
+            >
+              <option value="25">25 kg</option>
+              <option value="26">26 kg</option>
+              <option value="75">75 kg</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="font-medium text-sm">Purchase Rate (₹ per bag)</label>
             <Input 
               type="number" 
               min="0.1" 
@@ -260,6 +266,11 @@ export function Purchases() {
               required 
               className="font-mono"
             />
+            {rate && (
+              <p className="text-xs font-mono text-ink/65 mt-1">
+                Calculated Rate: ₹{((Number(rate) || 0) / (Number(kgPerBag) || 26)).toFixed(2)} / kg
+              </p>
+            )}
           </div>
 
           {errorMsg && (

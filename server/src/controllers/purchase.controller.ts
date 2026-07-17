@@ -82,6 +82,7 @@ export async function createPurchase(req: Request, res: Response) {
           create: body.items.map((item) => ({
             riceVarietyId: item.riceVarietyId,
             quantity: item.quantity,
+            kgPerBag: item.kgPerBag ?? 26,
             rate: item.rate,
             total: item.quantity * item.rate,
           })),
@@ -100,6 +101,7 @@ export async function createPurchase(req: Request, res: Response) {
     }
 
     for (const item of body.items) {
+      const incrementKg = item.quantity * (item.kgPerBag ?? 26)
       await tx.stock.upsert({
         where: {
           warehouseId_riceVarietyId: {
@@ -107,11 +109,11 @@ export async function createPurchase(req: Request, res: Response) {
             riceVarietyId: item.riceVarietyId,
           },
         },
-        update: { quantity: { increment: item.quantity } },
+        update: { quantity: { increment: incrementKg } },
         create: {
           warehouseId: warehouse.id,
           riceVarietyId: item.riceVarietyId,
-          quantity: item.quantity,
+          quantity: incrementKg,
           minThreshold: 1000,
         },
       })

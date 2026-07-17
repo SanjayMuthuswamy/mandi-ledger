@@ -19,29 +19,27 @@ export function Sales() {
   const [selectedVariety, setSelectedVariety] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState('')
   const [quantity, setQuantity] = useState('')
-  const [unit, setUnit] = useState<'kg' | 'quintal' | 'ton'>('kg')
+  const [kgPerBag, setKgPerBag] = useState('26')
   const [rate, setRate] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
-
+ 
   const handleRecordSale = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
     
-    let actualKg = Number(quantity)
-    if (unit === 'quintal') actualKg *= 100
-    if (unit === 'ton') actualKg *= 1000
-
+    const qtyBags = Number(quantity)
+    const kgWeight = Number(kgPerBag) || 26
+    const totalRequestedKg = qtyBags * kgWeight
+ 
     const variety = varieties.find(v => v.id === selectedVariety)
     
     if (variety) {
-      // Basic client-side validation using the variety's aggregated stock quantity
-      // A more robust check might involve the specific warehouse stock
       const totalStock = variety.stocks?.reduce((sum, s) => sum + s.quantity, 0) || 0
-      if (actualKg > totalStock) {
-        setErrorMsg(`Insufficient stock. Current stock for ${variety.name} is only ${totalStock.toLocaleString()} kg.`)
+      if (totalRequestedKg > totalStock) {
+        setErrorMsg(`Insufficient stock. Current stock for ${variety.name} is only ${totalStock.toLocaleString()} kg. (Requested: ${totalRequestedKg.toLocaleString()} kg)`)
         return
       }
-
+ 
       try {
         await addSale({
           customerId: selectedCustomer,
@@ -49,7 +47,8 @@ export function Sales() {
           paymentStatus: 'PENDING',
           items: [{
             riceVarietyId: selectedVariety,
-            quantity: actualKg,
+            quantity: qtyBags,
+            kgPerBag: kgWeight,
             rate: Number(rate)
           }]
         })
@@ -57,6 +56,7 @@ export function Sales() {
         setIsDrawerOpen(false)
         setQuantity('')
         setRate('')
+        setKgPerBag('26')
       } catch (err: any) {
         let msg = err.data?.error || "Failed to record sale. Please try again."
         if (err.data?.issues) {
@@ -69,7 +69,7 @@ export function Sales() {
       }
     }
   }
-
+ 
   const handleDeleteSale = (id: string) => {
     if (user?.role !== 'ADMIN') {
       alert("Access Denied: Only Administrators can delete sales records.")
@@ -80,16 +80,12 @@ export function Sales() {
       deleteSale(id)
     }
   }
-
+ 
   const selectedVarietyDetails = useMemo(() => 
     varieties.find(v => v.id === selectedVariety), 
   [varieties, selectedVariety])
   
-  let computedTotal = 0
-  let displayQuantity = Number(quantity) || 0
-  if (unit === 'quintal') displayQuantity *= 100
-  if (unit === 'ton') displayQuantity *= 1000
-  computedTotal = displayQuantity * (Number(rate) || 0)
+  const computedTotal = (Number(quantity) || 0) * (Number(rate) || 0)
 
   return (
     <div className="flex flex-col gap-8 pb-12">
@@ -114,7 +110,7 @@ export function Sales() {
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-lg font-bold text-ink">₹{sale.totalAmount.toLocaleString()}</div>
-                    <div className="text-xs text-ink/70 font-mono">₹{sale.items[0]?.rate.toFixed(2)}/kg</div>
+                    <div className="text-xs text-ink/70 font-mono">₹{sale.items[0]?.rate.toFixed(2)}/bag (₹{((sale.items[0]?.rate ?? 0) / (sale.items[0]?.kgPerBag ?? 26)).toFixed(2)}/kg)</div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-1">
@@ -127,7 +123,7 @@ export function Sales() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-ledger-red font-mono font-medium text-lg">
-                      -{sale.items[0]?.quantity.toLocaleString()} <span className="text-xs">kg</span>
+                      -{sale.items[0]?.quantity.toLocaleString()} <span className="text-xs">Bags ({sale.items[0]?.kgPerBag ?? 26}kg)</span>
                     </div>
                     <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSale(sale.id)}>DELETE</Button>
                   </div>
@@ -148,8 +144,8 @@ export function Sales() {
                 <th className="p-4">Date</th>
                 <th className="p-4">Customer</th>
                 <th className="p-4">Variety</th>
-                <th className="p-4 text-right">Quantity (kg)</th>
-                <th className="p-4 text-right">Rate (₹)</th>
+                <th className="p-4 text-right">Quantity</th>
+                <th className="p-4 text-right">Rate (₹/bag)</th>
                 <th className="p-4 text-right">Total (₹)</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -164,8 +160,13 @@ export function Sales() {
                     <div className={`w-3 h-3 rounded-full bg-variety-${sale.items[0]?.variety?.code}`} />
                     {sale.items[0]?.variety?.name}
                   </td>
-                  <td className="p-4 text-right text-ledger-red font-medium">-{sale.items[0]?.quantity.toLocaleString()}</td>
-                  <td className="p-4 text-right">{sale.items[0]?.rate.toFixed(2)}</td>
+                  <td className="p-4 text-right text-ledger-red font-medium">
+                    -{sale.items[0]?.quantity.toLocaleString()} Bags ({sale.items[0]?.kgPerBag ?? 26}kg)
+                  </td>
+                  <td className="p-4 text-right">
+                    {sale.items[0]?.rate.toFixed(2)}
+                    <span className="block text-[10px] text-ink/65">(₹{((sale.items[0]?.rate ?? 0) / (sale.items[0]?.kgPerBag ?? 26)).toFixed(2)}/kg)</span>
+                  </td>
                   <td className="p-4 text-right font-medium text-ink">{sale.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-right">
                     <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSale(sale.id)}>DELETE</Button>
@@ -237,30 +238,34 @@ export function Sales() {
           </div>
 
           <div className="space-y-2">
-            <label className="font-medium text-sm flex justify-between">
-              Quantity
-              <div className="flex gap-2 text-xs font-mono">
-                <button type="button" onClick={() => setUnit('kg')} className={unit === 'kg' ? 'text-ink font-bold' : 'text-ink/40'}>KG</button>
-                <button type="button" onClick={() => setUnit('quintal')} className={unit === 'quintal' ? 'text-ink font-bold' : 'text-ink/40'}>QTL</button>
-                <button type="button" onClick={() => setUnit('ton')} className={unit === 'ton' ? 'text-ink font-bold' : 'text-ink/40'}>TON</button>
-              </div>
-            </label>
-            <div className="relative">
-              <Input 
-                type="number" 
-                min="1" 
-                value={quantity} 
-                onChange={(e) => {setQuantity(e.target.value); setErrorMsg('');}} 
-                placeholder="0" 
-                required 
-                className="font-mono pr-12"
-              />
-              <span className="absolute right-3 top-2.5 text-ink/50 text-sm font-mono">{unit}</span>
-            </div>
+            <label className="font-medium text-sm">Quantity (Bags)</label>
+            <Input 
+              type="number" 
+              min="1" 
+              value={quantity} 
+              onChange={(e) => {setQuantity(e.target.value); setErrorMsg('');}} 
+              placeholder="0" 
+              required 
+              className="font-mono"
+            />
           </div>
 
           <div className="space-y-2">
-            <label className="font-medium text-sm">Selling Rate (₹ per kg)</label>
+            <label className="font-medium text-sm">Selling Kg/Bag</label>
+            <select
+              className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+              value={kgPerBag}
+              onChange={(e) => {setKgPerBag(e.target.value); setErrorMsg('');}}
+              required
+            >
+              <option value="25">25 kg</option>
+              <option value="26">26 kg</option>
+              <option value="75">75 kg</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="font-medium text-sm">Selling Rate (₹ per bag)</label>
             <Input 
               type="number" 
               min="0.1" 
@@ -271,6 +276,11 @@ export function Sales() {
               required 
               className="font-mono"
             />
+            {rate && (
+              <p className="text-xs font-mono text-ink/65 mt-1">
+                Calculated Rate: ₹{((Number(rate) || 0) / (Number(kgPerBag) || 26)).toFixed(2)} / kg
+              </p>
+            )}
           </div>
 
           {errorMsg && (

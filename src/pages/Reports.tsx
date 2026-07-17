@@ -185,7 +185,7 @@ export function Reports() {
                 </div>
                 <div className="flex justify-between items-center pt-1">
                   <div className="text-sm font-medium text-ink">{item.customer?.name}</div>
-                  <div className="text-sm text-ink/80">{item.items[0]?.quantity} kg</div>
+                  <div className="text-sm text-ink/80">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</div>
                 </div>
               </div>
             ))}
@@ -209,7 +209,7 @@ export function Reports() {
                 </div>
                 <div className="flex justify-between items-center pt-1">
                   <div className="text-sm font-medium text-ink">{item.supplier?.name}</div>
-                  <div className="text-sm text-ink/80">{item.items[0]?.quantity} kg</div>
+                  <div className="text-sm text-ink/80">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</div>
                 </div>
               </div>
             ))}
@@ -276,7 +276,7 @@ export function Reports() {
                   <td className="p-4 text-ink/70">{item.saleDate.split('T')[0]}</td>
                   <td className="p-4 font-sans text-ink">{item.customer?.name}</td>
                   <td className="p-4 font-sans text-ink/80">{item.items[0]?.variety?.name}</td>
-                  <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} kg</td>
+                  <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
                   <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-center">
                     <button 
@@ -295,7 +295,7 @@ export function Reports() {
                   <td className="p-4 text-ink/70">{item.purchaseDate.split('T')[0]}</td>
                   <td className="p-4 font-sans text-ink">{item.supplier?.name}</td>
                   <td className="p-4 font-sans text-ink/80">{item.items[0]?.variety?.name}</td>
-                  <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} kg</td>
+                  <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
                   <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-center">
                     <button 

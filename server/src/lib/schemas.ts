@@ -72,6 +72,7 @@ export const UpdateCustomerSchema = CreateCustomerSchema.partial()
 export const PurchaseItemSchema = z.object({
   riceVarietyId: z.string(),
   quantity: z.number().positive(),
+  kgPerBag: z.number().positive().optional().default(26),
   rate: z.number().positive(),
 })
 
@@ -94,6 +95,7 @@ export const UpdatePurchaseStatusSchema = z.object({
 export const SaleItemSchema = z.object({
   riceVarietyId: z.string(),
   quantity: z.number().positive(),
+  kgPerBag: z.number().positive().optional().default(26),
   rate: z.number().positive(),
 })
 

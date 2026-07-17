@@ -5,6 +5,7 @@ export interface PurchaseItem {
   id: string
   riceVarietyId: string
   quantity: number
+  kgPerBag?: number
   rate: number
   total: number
   variety: {

@@ -102,7 +102,8 @@ export function generatePDFReport(config: ReportConfig) {
   doc.setFont("helvetica", "bold")
   doc.text("Total Quantity:", 14 + boxWidth + 5 + 4, boxY + 6)
   doc.setFont("helvetica", "normal")
-  doc.text(`${config.summary.totalQuantity.toLocaleString()} kg`, 14 + boxWidth + 5 + 4, boxY + 12)
+  const qtyUnit = config.type === 'Inventory' ? 'kg' : 'Bags'
+  doc.text(`${config.summary.totalQuantity.toLocaleString()} ${qtyUnit}`, 14 + boxWidth + 5 + 4, boxY + 12)
 
   // Box 3: Amount (if applicable)
   if (config.summary.totalAmount !== undefined) {
@@ -129,29 +130,31 @@ export function generatePDFReport(config: ReportConfig) {
       `Rs. ${(item.quantity * item.price).toLocaleString()}`
     ])
   } else if (config.type === 'Purchases') {
-    head = [['S.No', 'Date', 'Entry No', 'Supplier', 'Variety', 'Qty (kg)', 'Rate', 'Total', 'Status']]
+    head = [['S.No', 'Date', 'Entry No', 'Supplier', 'Variety', 'Qty (Bags)', 'Rate/Bag', 'Rate/kg', 'Total', 'Status']]
     body = config.data.map((item, index) => [
       (index + 1).toString(),
       new Date(item.purchaseDate).toLocaleDateString(),
       item.entryNo,
       item.supplier?.name || 'N/A',
       item.items[0]?.variety?.name || 'N/A',
-      item.items[0]?.quantity.toLocaleString() || '0',
-      item.items[0]?.rate.toFixed(2) || '0.00',
-      item.totalAmount.toLocaleString(),
+      `${item.items[0]?.quantity.toLocaleString()} Bags (${item.items[0]?.kgPerBag ?? 26}kg)`,
+      `Rs. ${item.items[0]?.rate.toFixed(2)}`,
+      `Rs. ${((item.items[0]?.rate ?? 0) / (item.items[0]?.kgPerBag ?? 26)).toFixed(2)}`,
+      `Rs. ${item.totalAmount.toLocaleString()}`,
       item.paymentStatus
     ])
   } else if (config.type === 'Sales') {
-    head = [['S.No', 'Date', 'Invoice No', 'Customer', 'Variety', 'Qty (kg)', 'Rate', 'Total', 'Status']]
+    head = [['S.No', 'Date', 'Invoice No', 'Customer', 'Variety', 'Qty (Bags)', 'Rate/Bag', 'Rate/kg', 'Total', 'Status']]
     body = config.data.map((item, index) => [
       (index + 1).toString(),
       new Date(item.saleDate).toLocaleDateString(),
       item.invoiceNo,
       item.customer?.name || 'N/A',
       item.items[0]?.variety?.name || 'N/A',
-      item.items[0]?.quantity.toLocaleString() || '0',
-      item.items[0]?.rate.toFixed(2) || '0.00',
-      item.totalAmount.toLocaleString(),
+      `${item.items[0]?.quantity.toLocaleString()} Bags (${item.items[0]?.kgPerBag ?? 26}kg)`,
+      `Rs. ${item.items[0]?.rate.toFixed(2)}`,
+      `Rs. ${((item.items[0]?.rate ?? 0) / (item.items[0]?.kgPerBag ?? 26)).toFixed(2)}`,
+      `Rs. ${item.totalAmount.toLocaleString()}`,
       item.paymentStatus
     ])
   }
