@@ -13,11 +13,12 @@ export function Settings() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<'users' | 'warehouses' | 'varieties'>('varieties')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<any | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const { users, isLoading: usersLoading, addUser, deleteUser } = useUsers()
-  const { warehouses, isLoading: warehousesLoading, addWarehouse, deleteWarehouse } = useWarehouses()
-  const { varieties, isLoading: varietiesLoading, addVariety, deleteVariety } = useVarieties()
+  const { users, isLoading: usersLoading, addUser, updateUser, deleteUser } = useUsers()
+  const { warehouses, isLoading: warehousesLoading, addWarehouse, updateWarehouse, deleteWarehouse } = useWarehouses()
+  const { varieties, isLoading: varietiesLoading, addVariety, updateVariety, deleteVariety } = useVarieties()
 
   const handleAddSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -27,31 +28,56 @@ export function Settings() {
 
     try {
       if (activeTab === 'users') {
-        await addUser({
-          firstName: formData.get('firstName'),
-          lastName: formData.get('lastName'),
-          email: formData.get('email'),
-          password: formData.get('password'),
-          roleName: formData.get('roleName') || 'Accountant',
-        })
+        if (editingItem) {
+          await updateUser(editingItem.id, {
+            firstName: formData.get('firstName') as string,
+            lastName: formData.get('lastName') as string,
+          })
+        } else {
+          await addUser({
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            roleName: formData.get('roleName') || 'Accountant',
+          })
+        }
       } else if (activeTab === 'warehouses') {
-        await addWarehouse({
-          name: formData.get('name'),
-          location: formData.get('location'),
-          capacity: Number(formData.get('capacity') || 0),
-        })
+        if (editingItem) {
+          await updateWarehouse(editingItem.id, {
+            name: formData.get('name') as string,
+            location: formData.get('location') as string,
+            capacity: Number(formData.get('capacity') || 0),
+          })
+        } else {
+          await addWarehouse({
+            name: formData.get('name'),
+            location: formData.get('location'),
+            capacity: Number(formData.get('capacity') || 0),
+          })
+        }
       } else if (activeTab === 'varieties') {
-        await addVariety({
-          name: formData.get('name'),
-          code: formData.get('code'),
-          description: formData.get('description'),
-          basePrice: Number(formData.get('basePrice') || 0),
-        })
+        if (editingItem) {
+          await updateVariety(editingItem.id, {
+            name: formData.get('name') as string,
+            code: formData.get('code') as string,
+            description: formData.get('description') as string,
+            basePrice: Number(formData.get('basePrice') || 0),
+          })
+        } else {
+          await addVariety({
+            name: formData.get('name'),
+            code: formData.get('code'),
+            description: formData.get('description'),
+            basePrice: Number(formData.get('basePrice') || 0),
+          })
+        }
       }
       form.reset()
       setIsDrawerOpen(false)
+      setEditingItem(null)
     } catch (err: any) {
-      let msg = err.data?.error || `Failed to add ${activeTab.slice(0, -1)}.`
+      let msg = err.data?.error || `Failed to save ${activeTab.slice(0, -1)}.`
       if (err.data?.issues) {
          const issuesStr = Object.entries(err.data.issues)
             .map(([key, value]) => `${key}: ${(value as string[]).join(', ')}`)
@@ -79,7 +105,7 @@ export function Settings() {
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex justify-between items-start">
         <StampHeader title="System Settings" />
-        <Button className="hidden md:flex" onClick={() => setIsDrawerOpen(true)}>
+        <Button className="hidden md:flex" onClick={() => { setEditingItem(null); setIsDrawerOpen(true); }}>
           Add {activeTab === 'users' ? 'User' : activeTab === 'warehouses' ? 'Warehouse' : 'Variety'}
         </Button>
       </div>
@@ -129,6 +155,7 @@ export function Settings() {
                     <td className="p-4 text-ink/70">{v.code}</td>
                     <td className="p-4 text-right font-medium">{v.basePrice.toFixed(2)}</td>
                     <td className="p-4 text-right">
+                      <Button variant="ghost" className="h-8 px-2 text-xs mr-2 text-ink/70 hover:bg-ink/10" onClick={() => { setEditingItem(v); setIsDrawerOpen(true); }}>EDIT</Button>
                       <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDelete(v.id)}>DELETE</Button>
                     </td>
                   </tr>
@@ -160,6 +187,7 @@ export function Settings() {
                     <td className="p-4 text-ink/70">{u.email}</td>
                     <td className="p-4 font-sans text-ink/80">{u.role?.name || '-'}</td>
                     <td className="p-4 text-right">
+                      <Button variant="ghost" className="h-8 px-2 text-xs mr-2 text-ink/70 hover:bg-ink/10" onClick={() => { setEditingItem(u); setIsDrawerOpen(true); }}>EDIT</Button>
                       <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDelete(u.id)}>DELETE</Button>
                     </td>
                   </tr>
@@ -191,6 +219,7 @@ export function Settings() {
                     <td className="p-4 text-ink/70">{w.location || '-'}</td>
                     <td className="p-4 text-right font-medium">{w.capacity?.toLocaleString() || '-'}</td>
                     <td className="p-4 text-right">
+                      <Button variant="ghost" className="h-8 px-2 text-xs mr-2 text-ink/70 hover:bg-ink/10" onClick={() => { setEditingItem(w); setIsDrawerOpen(true); }}>EDIT</Button>
                       <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDelete(w.id)}>DELETE</Button>
                     </td>
                   </tr>
@@ -203,13 +232,13 @@ export function Settings() {
 
       <button 
         className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-turmeric text-ink rounded-full shadow-[2px_2px_0px_0px_rgba(20,32,26,1)] flex items-center justify-center z-30"
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={() => { setEditingItem(null); setIsDrawerOpen(true); }}
       >
         <span className="text-2xl leading-none font-medium mb-1">+</span>
       </button>
 
-      <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setErrorMsg('')}} title={`Add ${activeTab === 'users' ? 'User' : activeTab === 'warehouses' ? 'Warehouse' : 'Variety'}`}>
-        <form onSubmit={handleAddSubmit} className="flex flex-col gap-6">
+      <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setEditingItem(null); setErrorMsg('')}} title={editingItem ? `Edit ${activeTab === 'users' ? 'User' : activeTab === 'warehouses' ? 'Warehouse' : 'Variety'}` : `Add ${activeTab === 'users' ? 'User' : activeTab === 'warehouses' ? 'Warehouse' : 'Variety'}`}>
+        <form key={editingItem?.id || 'new'} onSubmit={handleAddSubmit} className="flex flex-col gap-6">
           {errorMsg && (
             <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm font-sans rounded-sm shadow-sm">
               {errorMsg}
@@ -221,29 +250,33 @@ export function Settings() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="font-medium text-sm">First Name</label>
-                  <Input name="firstName" required />
+                  <Input name="firstName" defaultValue={editingItem?.firstName || ''} required />
                 </div>
                 <div className="space-y-2">
                   <label className="font-medium text-sm">Last Name</label>
-                  <Input name="lastName" required />
+                  <Input name="lastName" defaultValue={editingItem?.lastName || ''} required />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="font-medium text-sm">Email</label>
-                <Input name="email" type="email" required />
-              </div>
-              <div className="space-y-2">
-                <label className="font-medium text-sm">Password</label>
-                <Input name="password" type="password" required />
-              </div>
-              <div className="space-y-2">
-                <label className="font-medium text-sm">Role</label>
-                <select name="roleName" className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric">
-                  <option value="Admin">Admin</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Accountant">Accountant</option>
-                </select>
-              </div>
+              {!editingItem && (
+                <>
+                  <div className="space-y-2">
+                    <label className="font-medium text-sm">Email</label>
+                    <Input name="email" type="email" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="font-medium text-sm">Password</label>
+                    <Input name="password" type="password" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="font-medium text-sm">Role</label>
+                    <select name="roleName" className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric">
+                      <option value="Admin">Admin</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Accountant">Accountant</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -251,15 +284,15 @@ export function Settings() {
             <>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Warehouse Name</label>
-                <Input name="name" placeholder="e.g. South Godown" required />
+                <Input name="name" defaultValue={editingItem?.name || ''} placeholder="e.g. South Godown" required />
               </div>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Location</label>
-                <Input name="location" placeholder="e.g. Coimbatore" required />
+                <Input name="location" defaultValue={editingItem?.location || ''} placeholder="e.g. Coimbatore" required />
               </div>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Max Capacity (kg)</label>
-                <Input name="capacity" type="number" min="0" placeholder="100000" />
+                <Input name="capacity" type="number" defaultValue={editingItem?.capacity || ''} min="0" placeholder="100000" />
               </div>
             </>
           )}
@@ -268,19 +301,19 @@ export function Settings() {
             <>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Variety Name</label>
-                <Input name="name" placeholder="e.g. Sona Masuri" required />
+                <Input name="name" defaultValue={editingItem?.name || ''} placeholder="e.g. Sona Masuri" required />
               </div>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Variety Code (Short, no spaces)</label>
-                <Input name="code" placeholder="e.g. sona" required />
+                <Input name="code" defaultValue={editingItem?.code || ''} placeholder="e.g. sona" required />
               </div>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Base Price (₹/kg)</label>
-                <Input name="basePrice" type="number" step="0.01" min="0" placeholder="50.00" required />
+                <Input name="basePrice" type="number" defaultValue={editingItem?.basePrice || ''} step="0.01" min="0" placeholder="50.00" required />
               </div>
               <div className="space-y-2">
                 <label className="font-medium text-sm">Description (Optional)</label>
-                <Input name="description" placeholder="Short description" />
+                <Input name="description" defaultValue={editingItem?.description || ''} placeholder="Short description" />
               </div>
             </>
           )}
