@@ -1,4 +1,4 @@
-# Ledger Noir — Rice Mandi ERP & Inventory System (v1.2.0)
+# Ledger Noir — Rice Mandi ERP & Inventory System (v1.3.0)
 
 A production-grade, ledger-inspired ERP and inventory management system designed specifically for grain mandi (market) and warehouse operations. 
 
@@ -16,11 +16,12 @@ Discarding generic SaaS layouts, **Ledger Noir** implements a bespoke physical-l
 ## 🛠 Tech Stack
 
 ### Frontend (Client)
-* **Framework:** React 18 (Vite)
+* **Framework:** React 19 (Vite)
 * **Language:** TypeScript
 * **Styling:** Vanilla CSS & Tailwind CSS (Custom Color System)
 * **Animation:** Framer Motion
-* **Reporting:** jsPDF (Client-side custom PDF generator)
+* **Reporting:** jsPDF & jsPDF-AutoTable (Client-side custom PDF generator)
+* **Invoice Template:** Custom HTML/JS tax invoice renderer (`invoice.html`) connected to live API data.
 
 ### Backend (Server)
 * **Runtime:** Node.js (v18+)
@@ -48,16 +49,23 @@ Discarding generic SaaS layouts, **Ledger Noir** implements a bespoke physical-l
    * Detailed ledger view displaying total value supplied and comprehensive purchase logs.
 5. **Purchase Management:**
    * Record transactions including Supplier Name, Rice Variety, Quantity, and rate.
-6. **Sales Management:**
+   * View details in drawer timeline.
+   * Update payment status directly from the Purchase Details Drawer.
+6. **Sales Management & Real-Time Invoicing:**
    * Record sales specifying Customer Name, Rice Variety, Quantity sold, and invoice details.
+   * **Custom Print & Download**: Open and render beautiful, print-ready TAX INVOICES using the dedicated tax invoice template engine (`invoice.html`), loaded dynamically with real-time sales data.
+   * Update payment status, transaction method, and amount paid.
 7. **Automated Inventory Management:**
    * **Atomic Database Transactions:** Registering a purchase automatically increases stock levels. Registering a sale atomically deducts from stock.
    * **Stock Checks:** The system checks stock availability during sales and prevents sales if the inventory is insufficient.
 8. **Reports Workspace:**
    * Separate, filterable reports for **Inventory Stock**, **Purchases**, and **Sales**.
    * Clean financial data tables with status toggles (PAID / PENDING).
-   * **Export PDF:** Custom jsPDF client-side exports styled as a formal ledger printout.
+   * **Export PDF:** Custom jsPDF client-side exports styled as a formal ledger printout, featuring "grid" line layouts and automatic "COMPUTER VERIFIED DOCUMENT" verification tags.
    * **Print Format:** Specialized CSS styling for clean browser printing.
+9. **Settings Controls:**
+   * Manage users, warehouses, and rice varieties.
+   * Full editing capabilities in Settings using model-based state drawers.
 
 ---
 
@@ -66,12 +74,15 @@ Discarding generic SaaS layouts, **Ledger Noir** implements a bespoke physical-l
 ```text
 mandi-ledger/
 ├── vercel.json         # SPA redirection configurations for Vercel
+├── invoice.html        # Tax Invoice template
+├── invoice.css         # Styling for Tax Invoice
+├── invoice.js          # Dynamic data fetch & mapping script for Tax Invoice
 ├── src/                # React Frontend Code
 │   ├── components/     # Reusable layout and branded UI elements
 │   ├── contexts/       # Global State (AuthContext, etc.)
 │   ├── data/           # React Query/Fetch API hooks
-│   ├── pages/          # Core views (Dashboard, Stock, Purchases, Sales, Reports, Login)
-│   └── lib/            # Utilities (PDF generator, etc.)
+│   ├── pages/          # Core views (Dashboard, Stock, Purchases, Sales, Reports, Settings, Login)
+│   └── lib/            # Utilities (PDF generator, API client)
 ├── server/             # Express Backend Code
 │   ├── prisma/         # Prisma Schema and Seeds
 │   ├── src/

@@ -11,7 +11,6 @@ import { useAuth } from "@/contexts/AuthContext"
 const loginSchema = z.object({
   employeeId: z.string().min(1, "Employee ID is required"),
   password: z.string().min(8, "Password must contain at least 8 characters"),
-  rememberMe: z.boolean().optional()
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -30,7 +29,6 @@ export function Login() {
     defaultValues: {
       employeeId: "",
       password: "",
-      rememberMe: false
     }
   })
 
@@ -168,22 +166,7 @@ export function Login() {
                 {errors.password && <p className="text-ledger-red text-xs font-medium mt-1">{errors.password.message}</p>}
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    disabled={isSubmitting}
-                    className="w-4 h-4 border-brass/50 rounded-sm text-turmeric focus:ring-turmeric/30 bg-stone/50 cursor-pointer disabled:opacity-50"
-                    {...register("rememberMe")}
-                  />
-                  <span className="text-sm font-sans text-ink/70 group-hover:text-ink transition-colors">Remember me</span>
-                </label>
-                <button type="button" disabled={isSubmitting} className="text-sm font-sans text-ink/70 hover:text-ink hover:underline transition-colors disabled:opacity-50">
-                  Forgot Password?
-                </button>
-              </div>
-              
-              <div className="pt-6">
+              <div className="pt-2">
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
