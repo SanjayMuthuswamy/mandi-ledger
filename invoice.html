@@ -3,149 +3,272 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tax Invoice</title>
+  <title>Tax Invoice — KRG Modern Rice Mills</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="invoice.css">
 </head>
 <body>
-  <div class="invoice-container">
-    <!-- Invoice Outer Border Wrapper -->
-    <div class="invoice-border-box">
-      
-      <!-- Top Title -->
-      <div class="invoice-title-container">
-        <h1 class="invoice-title">TAX INVOICE</h1>
-      </div>
+  <div class="invoice-wrapper">
 
-      <!-- Header Section: Logo & Company Details -->
-      <div class="header-section">
-        <div class="company-logo-container">
-          <img id="company-logo" src="{{company_logo}}" alt="Company Logo" onerror="this.style.display='none';">
-        </div>
-        <div class="company-details">
-          <h2 id="company-name" class="company-name">{{company_name}}</h2>
-          <div id="company-address" class="company-address">{{company_address}}</div>
-          <div class="company-gst"><strong>GSTIN:</strong> <span id="company-gstin">{{company_gstin}}</span></div>
-        </div>
-      </div>
+    <!-- ═══════════════════════ INVOICE DOCUMENT ═══════════════════════ -->
+    <div class="invoice-document">
 
-      <!-- Divider -->
-      <div class="section-divider"></div>
+      <!-- ─── HEADER ─────────────────────────────────────────── -->
+      <header class="inv-header">
 
-      <!-- Billing Info and Invoice Details Grid -->
-      <div class="billing-details-grid">
-        <!-- Left: Bill To -->
-        <div class="bill-to-box">
-          <div class="section-header">BILL TO</div>
-          <div class="billing-info-content">
-            <h3 id="customer-name" class="customer-name">{{customer_name}}</h3>
-            <div id="customer-address" class="customer-address">{{customer_address}}</div>
-            <div class="customer-gst"><strong>GSTIN:</strong> <span id="customer-gstin">{{customer_gstin}}</span></div>
+        <!-- Left: Company Info -->
+        <div class="company-block">
+          <div class="company-logo-wrap">
+            <img id="company-logo" src="" alt="Company Logo" onerror="this.style.display='none';">
+          </div>
+          <div class="company-info">
+            <div id="company-name" class="company-name"></div>
+            <div id="company-address" class="company-address"></div>
+            <div class="company-meta-row"><span class="meta-label">Phone:</span> <span id="company-phone"></span></div>
+            <div class="company-meta-row"><span class="meta-label">Email:</span> <span id="company-email"></span></div>
+            <div class="company-meta-row"><span class="meta-label">GSTIN:</span> <span id="company-gstin" class="mono-val"></span></div>
+            <div class="company-meta-row" id="company-pan-row"><span class="meta-label">PAN:</span> <span id="company-pan" class="mono-val"></span></div>
           </div>
         </div>
 
-        <!-- Right: Invoice Metadata -->
-        <div class="invoice-metadata-box">
-          <table class="metadata-table">
+        <!-- Center: TAX INVOICE title -->
+        <div class="title-block">
+          <div class="tax-invoice-label">TAX INVOICE</div>
+          <div class="invoice-subtitle">Original for Recipient</div>
+        </div>
+
+        <!-- Right: Invoice Details Box -->
+        <div class="inv-meta-box">
+          <div class="inv-meta-heading">Invoice Details</div>
+          <table class="inv-meta-table">
             <tr>
-              <th>Invoice No:</th>
-              <td id="invoice-number">{{invoice_number}}</td>
+              <th>Invoice No.</th>
+              <td id="invoice-number" class="mono-val"></td>
             </tr>
             <tr>
-              <th>Invoice Date:</th>
-              <td id="invoice-date">{{invoice_date}}</td>
+              <th>Invoice Date</th>
+              <td id="invoice-date" class="mono-val"></td>
+            </tr>
+            <tr id="due-date-row">
+              <th>Due Date</th>
+              <td id="due-date" class="mono-val"></td>
             </tr>
             <tr>
-              <th>DC / PO No:</th>
-              <td id="po-number">{{po_number}}</td>
+              <th>Vehicle No.</th>
+              <td id="vehicle-number" class="mono-val"></td>
             </tr>
             <tr>
-              <th>Vehicle No:</th>
-              <td id="vehicle-number">{{vehicle_number}}</td>
+              <th>Payment Mode</th>
+              <td id="payment-mode"></td>
             </tr>
             <tr>
-              <th>Place of Supply:</th>
-              <td id="place-of-supply">{{place_of_supply}}</td>
+              <th>Status</th>
+              <td><span id="invoice-status" class="status-badge"></span></td>
             </tr>
           </table>
         </div>
-      </div>
 
-      <!-- Line Items Table -->
-      <div class="items-table-container">
+      </header>
+
+      <!-- ─── DIVIDER ────────────────────────────────────────── -->
+      <div class="h-divider"></div>
+
+      <!-- ─── BILL TO + SUPPLY DETAILS ──────────────────────── -->
+      <section class="billing-supply-grid">
+
+        <!-- Bill To -->
+        <div class="bill-to-card">
+          <div class="card-heading">Bill To</div>
+          <div id="customer-name" class="cust-name"></div>
+          <div class="cust-detail"><span class="meta-label">Mobile:</span> <span id="customer-mobile"></span></div>
+          <div id="customer-address" class="cust-address"></div>
+          <div class="cust-detail" id="cust-city-row"><span class="meta-label">City:</span> <span id="customer-city"></span></div>
+          <div class="cust-detail" id="cust-gstin-row"><span class="meta-label">GSTIN:</span> <span id="customer-gstin" class="mono-val text-sm"></span></div>
+          <div class="cust-detail"><span class="meta-label">State:</span> <span id="customer-state"></span></div>
+          <div class="cust-detail" id="cust-pin-row"><span class="meta-label">PIN:</span> <span id="customer-pin" class="mono-val"></span></div>
+        </div>
+
+        <!-- Supply Details -->
+        <div class="supply-card">
+          <div class="card-heading">Supply Details</div>
+          <div class="supply-detail"><span class="meta-label">Place of Supply:</span> <span id="place-of-supply"></span></div>
+          <div class="supply-detail" id="rev-charge-row"><span class="meta-label">Reverse Charge:</span> <span id="reverse-charge"></span></div>
+          <div class="supply-detail" id="transport-row"><span class="meta-label">Transport:</span> <span id="transport-name"></span></div>
+          <div class="supply-detail" id="vehicle-sup-row"><span class="meta-label">Vehicle No.:</span> <span id="vehicle-sup" class="mono-val"></span></div>
+          <div class="supply-detail" id="delivery-note-row"><span class="meta-label">Delivery Note:</span> <span id="delivery-note"></span></div>
+          <div class="supply-detail"><span class="meta-label">DC / PO No.:</span> <span id="po-number" class="mono-val"></span></div>
+        </div>
+
+      </section>
+
+      <!-- ─── ITEMS TABLE ────────────────────────────────────── -->
+      <section class="items-section">
         <table id="items-table" class="items-table">
           <thead>
             <tr>
               <th class="col-sno">S.No</th>
-              <th class="col-desc">Item Description</th>
+              <th class="col-name">Item Name</th>
+              <th class="col-desc">Description</th>
               <th class="col-hsn">HSN/SAC</th>
-              <th class="col-qty">Qty (Bags)</th>
-              <th class="col-rate">Rate / Bag</th>
-              <th class="col-amount">Amount (₹)</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-unit">Unit</th>
+              <th class="col-rate">Rate (₹)</th>
+              <th class="col-disc">Discount</th>
+              <th class="col-gst">GST %</th>
+              <th class="col-tax">Tax Amt (₹)</th>
+              <th class="col-total">Total (₹)</th>
             </tr>
           </thead>
           <tbody id="items-body">
-            <!-- Dynamic Rows will be inserted here -->
-            {{items}}
+            <!-- Dynamic rows rendered by invoice.js -->
           </tbody>
           <tfoot>
-            <!-- Totals inside table -->
-            <tr class="totals-row">
-              <td colspan="3" class="text-right font-bold">Total Quantity:</td>
-              <td id="total-quantity" class="text-right font-bold">{{total_quantity}}</td>
-              <td class="text-right font-bold">Sub Total:</td>
-              <td id="subtotal" class="text-right font-bold">₹{{subtotal}}</td>
-            </tr>
-            <tr class="final-total-row">
-              <td colspan="5" class="text-right font-bold">GRAND TOTAL:</td>
-              <td id="total" class="text-right font-bold">₹{{total}}</td>
+            <tr class="tfoot-subtotal">
+              <td colspan="4" class="tfoot-label">Totals</td>
+              <td id="total-quantity" class="num-cell"></td>
+              <td></td>
+              <td></td>
+              <td id="total-discount" class="num-cell"></td>
+              <td></td>
+              <td id="total-tax" class="num-cell"></td>
+              <td id="subtotal" class="num-cell"></td>
             </tr>
           </tfoot>
         </table>
-      </div>
+      </section>
 
-      <!-- Amount in Words -->
-      <div class="amount-in-words-section">
-        <strong>Total In Words:</strong> <span id="amount-in-words">{{amount_in_words}}</span>
-      </div>
+      <!-- ─── TOTALS + AMOUNT IN WORDS ──────────────────────── -->
+      <section class="summary-section">
 
-      <!-- Footer Divider -->
-      <div class="section-divider"></div>
-
-      <!-- Bottom Info Grid: Bank details & Signature -->
-      <div class="footer-bottom-grid">
-        <!-- Left: Payment / Bank details -->
-        <div class="bank-details-box">
-          <div class="footer-section-header">Bank Details</div>
-          <table class="bank-details-table">
-            <tr>
-              <th>Bank Name:</th>
-              <td id="bank-name">{{bank_name}}</td>
-            </tr>
-            <tr>
-              <th>Account No:</th>
-              <td id="account-number">{{account_number}}</td>
-            </tr>
-            <tr>
-              <th>IFSC Code:</th>
-              <td id="ifsc">{{ifsc}}</td>
-            </tr>
-          </table>
+        <!-- Amount in Words (left) -->
+        <div class="amount-words-box">
+          <div class="box-heading">Amount in Words</div>
+          <div id="amount-in-words" class="amount-words-text"></div>
         </div>
 
-        <!-- Right: Authorized Signatory -->
-        <div class="signature-box">
-          <div class="company-signature-declaration">
-            For <span id="signatory-company-name">{{company_name}}</span>
+        <!-- Numeric Totals (right) -->
+        <div class="totals-box">
+          <div class="totals-row-item">
+            <span>Subtotal</span>
+            <span id="subtotal-display" class="mono-val"></span>
           </div>
-          <div class="signature-space"></div>
-          <div class="signature-line">
-            <span id="authorized-signatory">{{authorized_signatory}}</span>
-            <div class="signature-title">Authorized Signatory</div>
+          <div class="totals-row-item" id="discount-row">
+            <span>Discount</span>
+            <span id="discount-display" class="mono-val text-green"></span>
+          </div>
+          <div class="totals-row-item">
+            <span>Taxable Amount</span>
+            <span id="taxable-amount" class="mono-val"></span>
+          </div>
+          <div class="totals-row-item" id="cgst-row">
+            <span>CGST</span>
+            <span id="cgst-amount" class="mono-val"></span>
+          </div>
+          <div class="totals-row-item" id="sgst-row">
+            <span>SGST</span>
+            <span id="sgst-amount" class="mono-val"></span>
+          </div>
+          <div class="totals-row-item" id="igst-row">
+            <span>IGST</span>
+            <span id="igst-amount" class="mono-val"></span>
+          </div>
+          <div class="totals-row-item" id="roundoff-row">
+            <span>Round Off</span>
+            <span id="round-off" class="mono-val"></span>
+          </div>
+          <div class="totals-grand-row">
+            <span>Grand Total</span>
+            <span id="total" class="grand-amount mono-val"></span>
           </div>
         </div>
-      </div>
+
+      </section>
+
+      <!-- ─── PAYMENT INFO + NOTES ───────────────────────────── -->
+      <section class="payment-notes-grid">
+
+        <!-- Bank Details -->
+        <div class="payment-info-card">
+          <div class="card-heading">Payment Information</div>
+          <div class="payment-two-col">
+            <div>
+              <div class="pay-detail"><span class="meta-label">Bank Name:</span><br><span id="bank-name" class="pay-val"></span></div>
+              <div class="pay-detail"><span class="meta-label">Account No.:</span><br><span id="account-number" class="pay-val mono-val"></span></div>
+              <div class="pay-detail"><span class="meta-label">IFSC Code:</span><br><span id="ifsc" class="pay-val mono-val"></span></div>
+              <div class="pay-detail" id="upi-row"><span class="meta-label">UPI ID:</span><br><span id="upi-id" class="pay-val mono-val"></span></div>
+            </div>
+            <div>
+              <div class="pay-detail"><span class="meta-label">Payment Status:</span><br><span id="pay-status" class="status-badge"></span></div>
+              <div class="pay-detail"><span class="meta-label">Payment Mode:</span><br><span id="pay-mode-right" class="pay-val"></span></div>
+              <div class="pay-detail" id="ref-row"><span class="meta-label">Reference No.:</span><br><span id="reference-number" class="pay-val mono-val"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-card" id="notes-card">
+          <div id="terms-block" class="note-block">
+            <div class="note-heading">Terms &amp; Conditions</div>
+            <div id="terms-conditions"></div>
+          </div>
+          <div id="cust-notes-block" class="note-block">
+            <div class="note-heading">Customer Notes</div>
+            <div id="customer-notes"></div>
+          </div>
+          <div id="remarks-block" class="note-block">
+            <div class="note-heading">Remarks</div>
+            <div id="remarks"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ─── SIGNATURE AREA ─────────────────────────────────── -->
+      <section class="signature-section">
+
+        <!-- Customer Signature (left) -->
+        <div class="sig-block">
+          <div class="sig-space"></div>
+          <div class="sig-line-label">Customer Signature</div>
+        </div>
+
+        <!-- Authorized Signatory (right) -->
+        <div class="sig-block sig-block-right">
+          <div class="sig-for-text">For <span id="signatory-company-name"></span></div>
+          <div class="sig-space"></div>
+          <div class="sig-stamp-placeholder">SEAL</div>
+          <div class="sig-line-label">
+            <div id="authorized-signatory" class="sig-name"></div>
+            <div class="sig-title">Authorized Signatory</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ─── FOOTER ────────────────────────────────────────── -->
+      <footer class="inv-footer">
+        <div class="footer-divider"></div>
+        <div class="footer-content">
+          <div class="footer-note">This is a computer generated invoice.</div>
+          <div class="footer-meta">
+            <span id="company-website"></span>
+            <span class="footer-sep" id="website-sep">·</span>
+            <span id="footer-email"></span>
+            <span class="footer-sep">·</span>
+            <span id="footer-phone"></span>
+          </div>
+          <div class="footer-page">Page 1 of 1</div>
+        </div>
+      </footer>
 
     </div>
+    <!-- /invoice-document -->
+
   </div>
+  <!-- /invoice-wrapper -->
+
+  <script src="invoice.js"></script>
 </body>
 </html>

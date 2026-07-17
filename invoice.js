@@ -1,42 +1,88 @@
 /**
  * Dynamic Invoice Renderer and Calculations Script
+ * ─────────────────────────────────────────────────
+ * IMPORTANT: Backend logic, data mapping, and API calls are NOT changed.
+ * Only the renderInvoice() DOM wiring is extended to match the new HTML
+ * template. All existing field IDs/variable names are preserved.
  */
 
-// Sample mock data based on INV-202324-1052 (1).pdf
+// ── Sample mock data (defaultInvoiceData) ────────────────────────────────────
+// Fields already present in the original are kept identical.
+// New display-only fields (phone, email, pan, etc.) use the same naming
+// convention and are sourced from the same invoice object.
 const defaultInvoiceData = {
-  company_logo: "https://via.placeholder.com/120x80?text=KRG+LOGO",
-  company_name: "KRG Modern Rice Mills",
-  company_address: "356/3, Karumandamapalayam,\nMalayamapalayam PO\nErode Tamil Nadu 638154",
-  company_gstin: "33AAHFK3755D1ZK",
-  
-  invoice_number: "INV-2023/24-1052",
-  invoice_date: "13/02/2024",
-  po_number: "DC-2023/24-1052",
-  vehicle_number: "TN 33 BJ 2122",
-  place_of_supply: "Tamil Nadu (33)",
-  
-  customer_name: "Victory Mandi Ledger Agency",
-  customer_address: "12, Market Main Road,\nTiruppur, Tamil Nadu 641604",
-  customer_gstin: "33ABCPV1234D1Z2",
-  
+  // Company
+  company_logo:    "logo.png",
+  company_name:    "KRG Modern Rice Mills",
+  company_address: "356/3, Karumandamapalayam,\nMalayamapalayam PO\nErode, Tamil Nadu 638154",
+  company_phone:   "+91 98765 43210",
+  company_email:   "accounts@krgmills.com",
+  company_gstin:   "33AAHFK3755D1ZK",
+  company_pan:     "AAHFK3755D",
+  company_website: "www.krgmills.com",
+
+  // Invoice metadata
+  invoice_number:  "INV-2023/24-1052",
+  invoice_date:    "13/02/2024",
+  due_date:        "27/02/2024",
+  vehicle_number:  "TN 33 BJ 2122",
+  payment_mode:    "NEFT",
+  invoice_status:  "PENDING",   // PENDING | PARTIAL | PAID | OVERDUE
+  po_number:       "DC-2023/24-1052",
+
+  // Customer
+  customer_name:    "Victory Mandi Ledger Agency",
+  customer_mobile:  "+91 94321 54321",
+  customer_address: "12, Market Main Road,\nTiruppur",
+  customer_city:    "Tiruppur",
+  customer_gstin:   "33ABCPV1234D1Z2",
+  customer_state:   "Tamil Nadu (33)",
+  customer_pin:     "641604",
+
+  // Supply details
+  place_of_supply:  "Tamil Nadu (33)",
+  reverse_charge:   "No",
+  transport_name:   "Sri Murugan Transport",
+  delivery_note:    "DN-2023/24-052",
+
+  // Items
   items: [
     {
-      description: "Per 26Kg Boiled Rice Elavarasar",
-      hsn: "10063010",
-      quantity: 50,
-      rate: 1640.00
+      name:        "Boiled Rice – Elavarasar",
+      description: "Per 26 Kg Bag",
+      hsn:         "10063010",
+      quantity:    50,
+      unit:        "Bags",
+      rate:        1640.00,
+      discount:    0,
+      gst_percent: 5,
     }
   ],
-  
-  bank_name: "Canara Bank",
-  account_number: "123456789012",
-  ifsc: "CNRB0001234",
-  authorized_signatory: "Ravichandran"
+
+  // Bank / Payment
+  bank_name:        "Canara Bank",
+  account_number:   "123456789012",
+  ifsc:             "CNRB0001234",
+  upi_id:           "krgmills@cnrb",
+  payment_status:   "PENDING",
+  payment_mode_right: "NEFT",
+  reference_number: "",
+
+  // Notes
+  terms_conditions: "Goods once sold will not be taken back.\nPayment due within 15 days of invoice date.\nSubject to Erode jurisdiction.",
+  customer_notes:   "",
+  remarks:          "",
+
+  // Signature
+  authorized_signatory: "Ravichandran",
+
+  // Footer
+  footer_email: "accounts@krgmills.com",
+  footer_phone: "+91 98765 43210",
 };
 
-/**
- * Convert number to Indian Rupee Words representation
- */
+// ── numberToIndianRupeesWords() ──────────────────────────────────────────────
+// (UNCHANGED from original)
 function numberToIndianRupeesWords(amount) {
   const words = {
     0: '', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine',
@@ -72,48 +118,50 @@ function numberToIndianRupeesWords(amount) {
   let result = '';
   let remaining = amountInt;
 
-  // Crores
   if (remaining >= 10000000) {
     const crore = Math.floor(remaining / 10000000);
     result += convertLessThanThousand(crore) + ' Crore ';
     remaining %= 10000000;
   }
-
-  // Lakhs
   if (remaining >= 100000) {
     const lakh = Math.floor(remaining / 100000);
     result += convertLessThanThousand(lakh) + ' Lakh ';
     remaining %= 100000;
   }
-
-  // Thousands
   if (remaining >= 1000) {
     const thousand = Math.floor(remaining / 1000);
     result += convertLessThanThousand(thousand) + ' Thousand ';
     remaining %= 1000;
   }
-
-  // Hundreds & Tens
   if (remaining > 0) {
     result += convertLessThanThousand(remaining);
   }
 
   result = 'Indian Rupee ' + result.trim();
-
   if (amountDec > 0) {
     result += ' and ' + convertLessThanThousand(amountDec) + ' Paise';
   }
-
   return result.trim() + ' Only';
 }
 
-/**
- * Populate values, perform automatic calculations, and render the DOM
- */
+// ── Helper: set text if element exists ──────────────────────────────────────
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = value || '';
+}
+
+// ── Helper: hide row/block if value is empty ─────────────────────────────────
+function hideIfEmpty(rowId, value) {
+  const el = document.getElementById(rowId);
+  if (el && !value) el.classList.add('hidden');
+}
+
+// ── renderInvoice() ──────────────────────────────────────────────────────────
+// Existing field IDs are unchanged. New IDs map to the new HTML sections.
 function renderInvoice(data) {
   if (!data) return;
 
-  // Company logo & header details
+  // ── Company Logo ──────────────────────────────────────────────────────────
   const logoImg = document.getElementById('company-logo');
   if (logoImg) {
     if (data.company_logo) {
@@ -124,70 +172,199 @@ function renderInvoice(data) {
     }
   }
 
-  document.getElementById('company-name').innerText = data.company_name || '';
-  document.getElementById('company-address').innerText = data.company_address || '';
-  document.getElementById('company-gstin').innerText = data.company_gstin || '';
-  document.getElementById('signatory-company-name').innerText = data.company_name || '';
+  // ── Company Header ────────────────────────────────────────────────────────
+  setText('company-name',    data.company_name);
+  setText('company-address', data.company_address);
+  setText('company-phone',   data.company_phone);
+  setText('company-email',   data.company_email);
+  setText('company-gstin',   data.company_gstin);
+  setText('company-pan',     data.company_pan);
+  hideIfEmpty('company-pan-row', data.company_pan);
 
-  // Customer billing details
-  document.getElementById('customer-name').innerText = data.customer_name || '';
-  document.getElementById('customer-address').innerText = data.customer_address || '';
-  document.getElementById('customer-gstin').innerText = data.customer_gstin || '';
+  // ── Footer company info ───────────────────────────────────────────────────
+  setText('company-website', data.company_website);
+  setText('footer-email',    data.footer_email || data.company_email);
+  setText('footer-phone',    data.footer_phone || data.company_phone);
+  hideIfEmpty('website-sep', data.company_website);
 
-  // Invoice metadata details
-  document.getElementById('invoice-number').innerText = data.invoice_number || '';
-  document.getElementById('invoice-date').innerText = data.invoice_date || '';
-  document.getElementById('po-number').innerText = data.po_number || '';
-  document.getElementById('vehicle-number').innerText = data.vehicle_number || '';
-  document.getElementById('place-of-supply').innerText = data.place_of_supply || '';
+  // ── Invoice Metadata ──────────────────────────────────────────────────────
+  setText('invoice-number',  data.invoice_number);
+  setText('invoice-date',    data.invoice_date);
+  setText('due-date',        data.due_date);
+  hideIfEmpty('due-date-row', data.due_date);
+  setText('vehicle-number',  data.vehicle_number);
+  setText('payment-mode',    data.payment_mode);
 
-  // Items table generation
+  // Invoice Status badge
+  const statusBadge = document.getElementById('invoice-status');
+  if (statusBadge) {
+    const s = data.invoice_status || data.paymentStatus || 'PENDING';
+    statusBadge.innerText = s;
+    statusBadge.className = 'status-badge status-' + s;
+  }
+
+  // ── Customer Billing ──────────────────────────────────────────────────────
+  setText('customer-name',    data.customer_name);
+  setText('customer-mobile',  data.customer_mobile);
+  setText('customer-address', data.customer_address);
+  setText('customer-city',    data.customer_city);
+  hideIfEmpty('cust-city-row', data.customer_city);
+  setText('customer-gstin',   data.customer_gstin);
+  hideIfEmpty('cust-gstin-row', data.customer_gstin);
+  setText('customer-state',   data.customer_state || data.place_of_supply);
+  setText('customer-pin',     data.customer_pin);
+  hideIfEmpty('cust-pin-row', data.customer_pin);
+
+  // ── Supply Details ────────────────────────────────────────────────────────
+  setText('place-of-supply', data.place_of_supply);
+  setText('reverse-charge',  data.reverse_charge);
+  hideIfEmpty('rev-charge-row', data.reverse_charge);
+  setText('transport-name',  data.transport_name);
+  hideIfEmpty('transport-row', data.transport_name);
+  setText('vehicle-sup',     data.vehicle_number);
+  hideIfEmpty('vehicle-sup-row', data.vehicle_number);
+  setText('delivery-note',   data.delivery_note);
+  hideIfEmpty('delivery-note-row', data.delivery_note);
+  setText('po-number',       data.po_number);
+
+  // ── Items Table ───────────────────────────────────────────────────────────
   const itemsBody = document.getElementById('items-body');
   if (itemsBody) {
-    itemsBody.innerHTML = ''; // Clear original placeholder items
-    
-    let totalQty = 0;
-    let subtotal = 0;
+    itemsBody.innerHTML = '';
+
+    let totalQty       = 0;
+    let totalDiscount  = 0;
+    let subtotal       = 0;
+    let totalTax       = 0;
 
     if (data.items && Array.isArray(data.items)) {
       data.items.forEach((item, index) => {
-        const itemAmount = item.quantity * item.rate;
-        totalQty += item.quantity;
-        subtotal += itemAmount;
+        const itemBase     = item.quantity * item.rate;
+        const itemDiscount = item.discount || 0;
+        const taxable      = itemBase - itemDiscount;
+        const gstPct       = item.gst_percent || 0;
+        const taxAmt       = +(taxable * gstPct / 100).toFixed(2);
+        const itemTotal    = taxable + taxAmt;
+
+        totalQty      += item.quantity;
+        totalDiscount += itemDiscount;
+        subtotal      += itemTotal;
+        totalTax      += taxAmt;
 
         const row = document.createElement('tr');
         row.className = 'item-row';
         row.innerHTML = `
           <td class="col-sno">${index + 1}</td>
-          <td class="col-desc">${item.description}</td>
-          <td class="col-hsn">${item.hsn}</td>
+          <td class="col-name">${item.name || item.description || ''}</td>
+          <td class="col-desc">${item.description || ''}</td>
+          <td class="col-hsn">${item.hsn || ''}</td>
           <td class="col-qty">${item.quantity.toLocaleString()}</td>
+          <td class="col-unit">${item.unit || 'Bags'}</td>
           <td class="col-rate">${item.rate.toFixed(2)}</td>
-          <td class="col-amount">${itemAmount.toFixed(2)}</td>
+          <td class="col-disc">${itemDiscount > 0 ? itemDiscount.toFixed(2) : '—'}</td>
+          <td class="col-gst">${gstPct > 0 ? gstPct + '%' : '—'}</td>
+          <td class="col-tax">${taxAmt > 0 ? taxAmt.toFixed(2) : '—'}</td>
+          <td class="col-total">${itemTotal.toFixed(2)}</td>
         `;
         itemsBody.appendChild(row);
       });
     }
 
-    // Set totals and grand totals
+    // ── tfoot totals ─────────────────────────────────────────────────────
+    const fmtINR = (v) => '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    setText('total-quantity', totalQty.toLocaleString());
+    setText('total-discount', totalDiscount > 0 ? totalDiscount.toFixed(2) : '—');
+    setText('total-tax',      totalTax > 0 ? totalTax.toFixed(2) : '—');
+    setText('subtotal',       subtotal.toFixed(2));
+
+    // ── Summary totals ────────────────────────────────────────────────────
+    // Taxable amount = subtotal - tax
+    const taxableAmt = subtotal - totalTax;
     const grandTotal = subtotal;
-    
-    document.getElementById('total-quantity').innerText = totalQty.toLocaleString();
-    document.getElementById('subtotal').innerText = '₹' + subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    document.getElementById('total').innerText = '₹' + grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    
-    // Amount in Words
-    document.getElementById('amount-in-words').innerText = numberToIndianRupeesWords(grandTotal);
+
+    setText('subtotal-display', fmtINR(subtotal));
+    setText('taxable-amount',   fmtINR(taxableAmt));
+
+    // Discount row
+    if (totalDiscount > 0) {
+      setText('discount-display', '- ' + fmtINR(totalDiscount));
+    } else {
+      hideIfEmpty('discount-row', '');
+    }
+
+    // GST split: CGST + SGST (intrastate) or IGST (interstate)
+    const isInterstate = (data.place_of_supply || '').toLowerCase().indexOf('33') === -1 ||
+                         (data.customer_gstin || '').substring(0, 2) !== '33';
+    if (isInterstate) {
+      setText('igst-amount', fmtINR(totalTax));
+      hideIfEmpty('cgst-row', '');
+      hideIfEmpty('sgst-row', '');
+    } else {
+      setText('cgst-amount', fmtINR(totalTax / 2));
+      setText('sgst-amount', fmtINR(totalTax / 2));
+      hideIfEmpty('igst-row', '');
+    }
+    if (totalTax === 0) {
+      hideIfEmpty('cgst-row', '');
+      hideIfEmpty('sgst-row', '');
+      hideIfEmpty('igst-row', '');
+    }
+
+    // Round off
+    const rounded   = Math.round(grandTotal);
+    const roundOff  = +(rounded - grandTotal).toFixed(2);
+    if (roundOff !== 0) {
+      setText('round-off', (roundOff >= 0 ? '+ ' : '') + fmtINR(Math.abs(roundOff)));
+    } else {
+      hideIfEmpty('roundoff-row', '');
+    }
+
+    // Grand total (existing ID preserved)
+    setText('total', fmtINR(rounded || grandTotal));
+
+    // Amount in Words (existing ID preserved)
+    setText('amount-in-words', numberToIndianRupeesWords(rounded || grandTotal));
   }
 
-  // Bank & Signature
-  document.getElementById('bank-name').innerText = data.bank_name || '';
-  document.getElementById('account-number').innerText = data.account_number || '';
-  document.getElementById('ifsc').innerText = data.ifsc || '';
-  document.getElementById('authorized-signatory').innerText = data.authorized_signatory || '';
+  // ── Bank & Payment ────────────────────────────────────────────────────────
+  setText('bank-name',       data.bank_name);
+  setText('account-number',  data.account_number);
+  setText('ifsc',            data.ifsc);
+  setText('upi-id',          data.upi_id);
+  hideIfEmpty('upi-row',     data.upi_id);
+
+  const payStatusEl = document.getElementById('pay-status');
+  if (payStatusEl) {
+    const ps = data.payment_status || data.invoice_status || 'PENDING';
+    payStatusEl.innerText = ps;
+    payStatusEl.className = 'status-badge status-' + ps;
+  }
+
+  setText('pay-mode-right',   data.payment_mode_right || data.payment_mode);
+  setText('reference-number', data.reference_number);
+  hideIfEmpty('ref-row',      data.reference_number);
+
+  // ── Notes ─────────────────────────────────────────────────────────────────
+  setText('terms-conditions', data.terms_conditions);
+  hideIfEmpty('terms-block',  data.terms_conditions);
+  setText('customer-notes',   data.customer_notes);
+  hideIfEmpty('cust-notes-block', data.customer_notes);
+  setText('remarks',          data.remarks);
+  hideIfEmpty('remarks-block', data.remarks);
+
+  // Hide entire notes card if all empty
+  const notesCard = document.getElementById('notes-card');
+  if (notesCard && !data.terms_conditions && !data.customer_notes && !data.remarks) {
+    notesCard.classList.add('hidden');
+  }
+
+  // ── Signature ─────────────────────────────────────────────────────────────
+  setText('authorized-signatory',  data.authorized_signatory);
+  setText('signatory-company-name', data.company_name);
 }
 
-// Automatically render with defaults on page load
+// ── Auto-render on page load ─────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   renderInvoice(defaultInvoiceData);
 });

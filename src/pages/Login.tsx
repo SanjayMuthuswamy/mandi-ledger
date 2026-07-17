@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion } from "framer-motion"
-import { Wheat, User, Lock, Eye, EyeOff, Shield, Loader2, Scale } from "lucide-react"
+import { User, Lock, Eye, EyeOff, Shield, Loader2, Scale } from "lucide-react"
 import { api } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -77,7 +77,7 @@ export function Login() {
           className="relative z-10 mt-12"
         >
           <div className="flex items-center gap-4 mb-6">
-            <Wheat className="text-turmeric w-12 h-12" />
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain bg-white rounded-md p-1 border border-brass/30" />
             <h1 className="font-display text-4xl xl:text-5xl uppercase tracking-tight drop-shadow-stamp">
               Mandi Ledger
             </h1>
@@ -112,7 +112,7 @@ export function Login() {
         >
           {/* Mobile Header */}
           <div className="md:hidden mb-6 text-center flex flex-col items-center gap-2">
-            <Wheat className="text-brass w-12 h-12" />
+            <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain bg-[#F8F9F3] rounded-md p-1 border border-brass/30 mb-2" />
             <h1 className="font-display text-4xl uppercase tracking-tighter text-ink drop-shadow-stamp">
               Mandi Ledger
             </h1>
