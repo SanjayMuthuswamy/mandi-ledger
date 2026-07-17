@@ -93,10 +93,6 @@ export function Login() {
             <span>© {new Date().getFullYear()} Mandi Ledger</span>
             <span>All rights reserved.</span>
           </div>
-          <div className="flex flex-col gap-1 text-right">
-            <span>Version 1.0.0</span>
-            <span>Environment: Production</span>
-          </div>
         </div>
       </div>
 
@@ -190,23 +186,8 @@ export function Login() {
               <Shield className="w-4 h-4 text-paddy shrink-0" />
               <span>Your credentials are encrypted and securely transmitted.</span>
             </div>
-            
-            <div className="flex items-center gap-4 text-xs font-sans text-ink/40 md:hidden flex-wrap justify-center">
-              <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
-              <span>•</span>
-              <a href="#" className="hover:text-ink transition-colors">Terms</a>
-              <span>•</span>
-              <a href="#" className="hover:text-ink transition-colors">Support</a>
-            </div>
           </div>
         </motion.div>
-
-        {/* Desktop Footer */}
-        <div className="hidden md:flex absolute bottom-6 right-8 gap-6 text-xs font-sans text-ink/40">
-          <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-ink transition-colors">Terms of Service</a>
-          <a href="#" className="hover:text-ink transition-colors">support@mandiledger.com</a>
-        </div>
       </div>
 
 
