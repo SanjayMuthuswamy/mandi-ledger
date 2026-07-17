@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
@@ -12,6 +12,29 @@ import { Plus, Wheat, Loader2, Eye } from "lucide-react"
 
 function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | null; onClose: () => void }) {
   const { purchase, isLoading } = usePurchaseDetails(purchaseId)
+  const { updateStatus } = usePurchases()
+  const [status, setStatus] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  useEffect(() => {
+    if (purchase) {
+      setStatus(purchase.paymentStatus)
+    }
+  }, [purchase])
+
+  const handleUpdatePayment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!purchase) return
+    setIsUpdating(true)
+    try {
+      await updateStatus(purchase.id, status)
+      alert("Payment status updated successfully.")
+    } catch (err: any) {
+      alert(err.data?.error || "Failed to update payment status.")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   return (
     <DetailDrawer
@@ -34,6 +57,30 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
             <DetailRow label="Purchase Date" value={purchase.purchaseDate?.split('T')[0]} />
             <DetailRow label="Payment Status" value={<StatusBadge status={purchase.paymentStatus} />} />
             <DetailRow label="Total Amount" value={<span className="font-mono font-bold text-paddy">₹{purchase.totalAmount?.toLocaleString()}</span>} />
+          </DrawerSection>
+
+          {/* Update Payment Status */}
+          <DrawerSection title="Update Payment Status">
+            <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                  >
+                    <option value="PENDING">UNPAID</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PAID">PAID</option>
+                    <option value="OVERDUE">OVERDUE</option>
+                  </select>
+                </div>
+                <Button type="submit" disabled={isUpdating} className="h-9 px-4 text-xs font-medium uppercase tracking-wider">
+                  {isUpdating ? 'Saving...' : 'Update'}
+                </Button>
+              </div>
+            </form>
           </DrawerSection>
 
           {/* Supplier Details */}

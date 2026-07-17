@@ -179,7 +179,7 @@ export function Reports() {
                       onClick={() => handleToggleStatus('sale', item.id, item.paymentStatus)}
                       className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-0.5 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20'}`}
                     >
-                      {item.paymentStatus}
+                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
                     </button>
                   </div>
                 </div>
@@ -203,7 +203,7 @@ export function Reports() {
                       onClick={() => handleToggleStatus('purchase', item.id, item.paymentStatus)}
                       className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-0.5 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20'}`}
                     >
-                      {item.paymentStatus}
+                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
                     </button>
                   </div>
                 </div>
@@ -283,7 +283,7 @@ export function Reports() {
                       onClick={() => handleToggleStatus('sale', item.id, item.paymentStatus)}
                       className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-1 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20 hover:bg-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20 hover:bg-turmeric/20'}`}
                     >
-                      {item.paymentStatus}
+                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
                     </button>
                   </td>
                 </tr>
@@ -302,7 +302,7 @@ export function Reports() {
                       onClick={() => handleToggleStatus('purchase', item.id, item.paymentStatus)}
                       className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-1 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20 hover:bg-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20 hover:bg-turmeric/20'}`}
                     >
-                      {item.paymentStatus}
+                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
                     </button>
                   </td>
                 </tr>

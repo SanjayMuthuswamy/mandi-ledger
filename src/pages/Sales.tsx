@@ -48,7 +48,25 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
       onClose={onClose}
       title={sale?.invoiceNo || "Sale Details"}
       subtitle={sale ? `${sale.saleDate?.split('T')[0]} · ${sale.customer?.name}` : undefined}
-      actions={<DrawerActionBar onPrint={() => window.print()} />}
+      actions={
+        <DrawerActionBar 
+          onPrint={() => {
+            if (!sale) return
+            const printWindow = window.open(`/invoice.html?saleId=${sale.id}`, '_blank')
+            if (printWindow) {
+              printWindow.addEventListener('load', () => {
+                setTimeout(() => {
+                  printWindow.print()
+                }, 500)
+              })
+            }
+          }}
+          onDownload={() => {
+            if (!sale) return
+            window.open(`/invoice.html?saleId=${sale.id}`, '_blank')
+          }}
+        />
+      }
     >
       {isLoading ? (
         <div className="flex justify-center p-16">

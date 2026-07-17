@@ -365,6 +365,86 @@ function renderInvoice(data) {
 }
 
 // ── Auto-render on page load ─────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  renderInvoice(defaultInvoiceData);
+window.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const saleId = urlParams.get('saleId');
+
+  if (saleId) {
+    try {
+      const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api' : '/api';
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`${API_URL}/sales/${saleId}`, { headers });
+      if (!response.ok) {
+        throw new Error('Failed to fetch sale details');
+      }
+      const sale = await response.json();
+      
+      // Map sale fields to defaultInvoiceData shape
+      const invoiceData = {
+        company_logo:    "logo.png",
+        company_name:    "KRG Modern Rice Mills",
+        company_address: "356/3, Karumandamapalayam,\nMalayamapalayam PO\nErode, Tamil Nadu 638154",
+        company_phone:   "+91 98765 43210",
+        company_email:   "accounts@krgmills.com",
+        company_gstin:   "33AAHFK3755D1ZK",
+        company_pan:     "AAHFK3755D",
+        company_website: "www.krgmills.com",
+
+        // Invoice metadata
+        invoice_number:  sale.invoiceNo,
+        invoice_date:    new Date(sale.saleDate).toLocaleDateString('en-GB'),
+        due_date:        new Date(sale.saleDate).toLocaleDateString('en-GB'),
+        vehicle_number:  sale.vehicleNo || "—",
+        payment_mode:    sale.paymentMethod || "—",
+        invoice_status:  sale.paymentStatus,
+        po_number:       "—",
+
+        // Customer
+        customer_name:    sale.customer?.name,
+        customer_mobile:  sale.customer?.phone || "—",
+        customer_address: sale.customer?.address || "—",
+        customer_city:    "—",
+        customer_gstin:   sale.customer?.gstNumber || "—",
+        customer_state:   "Tamil Nadu (33)",
+        customer_pin:     "—",
+
+        // Supply details
+        place_of_supply:  "Tamil Nadu (33)",
+        reverse_charge:   "No",
+        transport_name:   "—",
+        delivery_note:    "—",
+
+        // Items
+        items: (sale.items || []).map(item => ({
+          name: item.variety?.name,
+          description: `${item.quantity} Bags (${item.kgPerBag || 26} kg/bag)`,
+          hsn: "1006",
+          quantity: item.quantity,
+          unit: "Bags",
+          rate: item.rate,
+          discount: 0,
+          gst_percent: 0,
+        })),
+
+        // Bank details
+        bank_name: "HDFC Bank Ltd",
+        account_number: "50200012345678",
+        ifsc: "HDFC0001234",
+        upi_id: "krgmills@hdfcbank",
+        authorized_signatory: "For KRG Modern Rice Mills",
+      };
+
+      renderInvoice(invoiceData);
+    } catch (err) {
+      console.error(err);
+      alert('Error loading invoice: ' + err.message);
+      renderInvoice(defaultInvoiceData);
+    }
+  } else {
+    renderInvoice(defaultInvoiceData);
+  }
 });
