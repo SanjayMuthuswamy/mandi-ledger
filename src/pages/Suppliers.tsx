@@ -79,20 +79,20 @@ export function Suppliers() {
             </div>
           ) : (
             <>
-              <div className="flex justify-between items-end">
-                <div>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 bg-[#F8F9F3] p-6 border border-brass/35 rounded-sm shadow-[2px_2px_0px_0px_rgba(20,32,26,0.02)]">
+                <div className="space-y-3">
                   <StampHeader title={supplierDetails?.name || ''} className="mb-2" />
-                  <div className="flex gap-4 font-mono text-sm text-ink/70">
-                    <span className="flex items-center gap-1"><Phone size={14} /> {supplierDetails?.phone || 'N/A'}</span>
-                    <span className="flex items-center gap-1"><MapPin size={14} /> {supplierDetails?.address || 'N/A'}</span>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 font-mono text-xs md:text-sm text-ink/70">
+                    <span className="flex items-center gap-1"><Phone size={14} className="shrink-0" /> {supplierDetails?.phone || 'N/A'}</span>
+                    <span className="flex items-center gap-1"><MapPin size={14} className="shrink-0" /> {supplierDetails?.address || 'N/A'}</span>
                   </div>
                 </div>
-                <div className="text-right flex flex-col items-end">
-                  <div className="font-mono text-2xl text-ink">{(supplierDetails?.purchases?.reduce((acc: number, p: any) => acc + p.totalAmount, 0) || 0).toLocaleString()} <span className="text-sm text-ink/60">₹</span></div>
-                  <div className="text-xs uppercase tracking-wider text-ink/50 font-sans font-medium mb-2">Total Value Supplied</div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => { setSupplierToEdit(supplierDetails); setIsDrawerOpen(true); }}>EDIT</Button>
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSupplier(supplierDetails.id)}>DELETE</Button>
+                <div className="flex flex-col items-start md:items-end md:text-right gap-1 border-t md:border-t-0 border-brass/15 pt-4 md:pt-0">
+                  <div className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-medium mb-2">Total Value Supplied</div>
+                  <div className="font-mono text-2xl font-bold text-ink">₹{(supplierDetails?.purchases?.reduce((acc: number, p: any) => acc + p.totalAmount, 0) || 0).toLocaleString()}</div>
+                  <div className="flex gap-2 mt-2">
+                    <Button variant="ghost" className="h-7 px-3 text-xs border border-brass/30 hover:bg-ink/5" onClick={() => { setSupplierToEdit(supplierDetails); setIsDrawerOpen(true); }}>EDIT</Button>
+                    <Button variant="ghost" className="h-7 px-3 text-xs border border-ledger-red/30 text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSupplier(supplierDetails.id)}>DELETE</Button>
                   </div>
                 </div>
               </div>
@@ -105,38 +105,40 @@ export function Suppliers() {
             <div className="bg-ink/5 p-4 border-b border-brass/20 font-display uppercase tracking-wider text-ink/80 text-sm">
               Purchase History
             </div>
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-brass/30 font-display uppercase tracking-wider text-ink/70 text-xs">
-                <tr>
-                  <th className="p-4">Entry No.</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Variety</th>
-                  <th className="p-4 text-right">Quantity (kg)</th>
-                  <th className="p-4 text-right">Rate (₹)</th>
-                  <th className="p-4 text-right">Total (₹)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brass/10 font-mono">
-                {supplierDetails.purchases?.map((p: any) => (
-                  <tr key={p.id} className="hover:bg-ink/5 transition-colors">
-                    <td className="p-4 text-ink/60">{p.entryNo}</td>
-                    <td className="p-4">{p.purchaseDate.split('T')[0]}</td>
-                    <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full bg-variety-${p.items[0]?.variety?.code}`} />
-                      {p.items[0]?.variety?.name}
-                    </td>
-                    <td className="p-4 text-right">{p.items[0]?.quantity.toLocaleString()}</td>
-                    <td className="p-4 text-right">{p.items[0]?.rate.toFixed(2)}</td>
-                    <td className="p-4 text-right">{p.totalAmount.toLocaleString()}</td>
-                  </tr>
-                ))}
-                {!supplierDetails.purchases?.length && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[600px]">
+                <thead className="border-b border-brass/30 font-display uppercase tracking-wider text-ink/70 text-xs">
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-ink/50">No purchases found.</td>
+                    <th className="p-4">Entry No.</th>
+                    <th className="p-4">Date</th>
+                    <th className="p-4">Variety</th>
+                    <th className="p-4 text-right">Quantity (kg)</th>
+                    <th className="p-4 text-right">Rate (₹)</th>
+                    <th className="p-4 text-right">Total (₹)</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-brass/10 font-mono">
+                  {supplierDetails.purchases?.map((p: any) => (
+                    <tr key={p.id} className="hover:bg-ink/5 transition-colors">
+                      <td className="p-4 text-ink/60">{p.entryNo}</td>
+                      <td className="p-4">{p.purchaseDate.split('T')[0]}</td>
+                      <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full bg-variety-${p.items[0]?.variety?.code}`} />
+                        {p.items[0]?.variety?.name}
+                      </td>
+                      <td className="p-4 text-right">{p.items[0]?.quantity.toLocaleString()}</td>
+                      <td className="p-4 text-right">₹{p.items[0]?.rate.toFixed(2)}</td>
+                      <td className="p-4 text-right">₹{p.totalAmount.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {!supplierDetails.purchases?.length && (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-ink/50 font-sans">No purchases found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -199,30 +201,32 @@ export function Suppliers() {
         </div>
       ) : (
         <div className="bg-stone-light border border-brass/30 shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)] overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
-              <tr>
-                <th className="p-4">Name</th>
-                <th className="p-4">Contact</th>
-                <th className="p-4">Location</th>
-                <th className="p-4 text-right">Purchases</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brass/10 font-mono">
-              {suppliers.map((supplier) => (
-                <tr 
-                  key={supplier.id} 
-                  className="hover:bg-ink/5 transition-colors cursor-pointer group"
-                  onClick={() => setSelectedSupplier(supplier.id)}
-                >
-                  <td className="p-4 font-sans font-medium text-ink">{supplier.name}</td>
-                  <td className="p-4 text-ink/80">{supplier.phone || '-'}</td>
-                  <td className="p-4 text-ink/80">{supplier.address || '-'}</td>
-                  <td className="p-4 text-right font-medium text-ink">{supplier._count?.purchases || 0}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[500px]">
+              <thead className="border-b border-brass/30 font-display uppercase tracking-wider text-ink/70 bg-ink/5">
+                <tr>
+                  <th className="p-4">Name</th>
+                  <th className="p-4">Contact</th>
+                  <th className="p-4">Location</th>
+                  <th className="p-4 text-right">Purchases</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-brass/10 font-mono">
+                {suppliers.map((supplier) => (
+                  <tr 
+                    key={supplier.id} 
+                    className="hover:bg-ink/5 transition-colors cursor-pointer group"
+                    onClick={() => setSelectedSupplier(supplier.id)}
+                  >
+                    <td className="p-4 font-sans font-medium text-ink">{supplier.name}</td>
+                    <td className="p-4 text-ink/80">{supplier.phone || '-'}</td>
+                    <td className="p-4 text-ink/80">{supplier.address || '-'}</td>
+                    <td className="p-4 text-right font-medium text-ink">{supplier._count?.purchases || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
