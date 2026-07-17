@@ -2,12 +2,108 @@ import { useState, useMemo } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
+import { DetailDrawer, DetailRow, StatusBadge, DrawerSection, DrawerActionBar } from "@/components/ui/DetailDrawer"
 import { Input } from "@/components/ui/Input"
 import { useVarieties } from "@/data/useVarieties"
-import { usePurchases } from "@/data/usePurchases"
+import { usePurchases, usePurchaseDetails } from "@/data/usePurchases"
 import { useSuppliers } from "@/data/useSuppliers"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus, Wheat, Loader2 } from "lucide-react"
+import { Plus, Wheat, Loader2, Eye } from "lucide-react"
+
+function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | null; onClose: () => void }) {
+  const { purchase, isLoading } = usePurchaseDetails(purchaseId)
+
+  return (
+    <DetailDrawer
+      isOpen={!!purchaseId}
+      onClose={onClose}
+      title={purchase?.entryNo || "Purchase Details"}
+      subtitle={purchase ? `${purchase.purchaseDate?.split('T')[0]} · ${purchase.supplier?.name}` : undefined}
+      actions={<DrawerActionBar onPrint={() => window.print()} />}
+    >
+      {isLoading ? (
+        <div className="flex justify-center p-16">
+          <Loader2 className="animate-spin text-turmeric w-8 h-8" />
+        </div>
+      ) : purchase ? (
+        <div className="divide-y divide-brass/15">
+
+          {/* Purchase Entry Details */}
+          <DrawerSection title="Purchase Entry">
+            <DetailRow label="Entry No." value={<span className="font-mono font-bold">{purchase.entryNo}</span>} />
+            <DetailRow label="Purchase Date" value={purchase.purchaseDate?.split('T')[0]} />
+            <DetailRow label="Payment Status" value={<StatusBadge status={purchase.paymentStatus} />} />
+            <DetailRow label="Total Amount" value={<span className="font-mono font-bold text-paddy">₹{purchase.totalAmount?.toLocaleString()}</span>} />
+          </DrawerSection>
+
+          {/* Supplier Details */}
+          <DrawerSection title="Supplier Details">
+            <DetailRow label="Supplier Name" value={purchase.supplier?.name} />
+            <DetailRow label="Phone" value={purchase.supplier?.phone || '—'} />
+            <DetailRow label="Address" value={purchase.supplier?.address || '—'} />
+            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{purchase.supplier?.gstNumber || '—'}</span>} />
+          </DrawerSection>
+
+          {/* Items Purchased */}
+          <DrawerSection title="Items Purchased">
+            {purchase.items?.map((item: any, i: number) => (
+              <div key={item.id || i} className="border border-brass/20 rounded-sm p-3 mb-2 last:mb-0 bg-stone/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-3 h-3 rounded-full bg-variety-${item.variety?.code} shrink-0`} />
+                  <span className="font-sans font-medium text-ink text-sm">{item.variety?.name}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div>
+                    <div className="text-ink/50 uppercase text-[10px]">Bags</div>
+                    <div className="font-bold text-ink">{item.quantity}</div>
+                  </div>
+                  <div>
+                    <div className="text-ink/50 uppercase text-[10px]">Kg/Bag</div>
+                    <div className="font-bold text-ink">{item.kgPerBag ?? 26} kg</div>
+                  </div>
+                  <div>
+                    <div className="text-ink/50 uppercase text-[10px]">Total Kg</div>
+                    <div className="font-bold text-paddy">{((item.quantity ?? 0) * (item.kgPerBag ?? 26)).toLocaleString()} kg</div>
+                  </div>
+                  <div>
+                    <div className="text-ink/50 uppercase text-[10px]">Rate / Bag</div>
+                    <div className="font-bold text-ink">₹{item.rate?.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <div className="text-ink/50 uppercase text-[10px]">Rate / Kg</div>
+                    <div className="font-bold text-ink">₹{((item.rate ?? 0) / (item.kgPerBag ?? 26)).toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <div className="text-ink/50 uppercase text-[10px]">Item Total</div>
+                    <div className="font-bold text-paddy">₹{((item.quantity ?? 0) * (item.rate ?? 0)).toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </DrawerSection>
+
+          {/* Transaction Summary */}
+          <DrawerSection title="Transaction Summary">
+            <DetailRow label="Total Bags" value={<span className="font-mono">{purchase.items?.reduce((s: number, i: any) => s + (i.quantity ?? 0), 0)} bags</span>} />
+            <DetailRow label="Total Weight" value={<span className="font-mono">{purchase.items?.reduce((s: number, i: any) => s + (i.quantity ?? 0) * (i.kgPerBag ?? 26), 0).toLocaleString()} kg</span>} />
+            <DetailRow label="Grand Total" value={<span className="font-mono font-bold text-paddy">₹{purchase.totalAmount?.toLocaleString()}</span>} />
+            <DetailRow label="Payment Status" value={<StatusBadge status={purchase.paymentStatus} />} />
+          </DrawerSection>
+
+          {/* Metadata */}
+          <DrawerSection title="Record Info">
+            <DetailRow label="Record ID" value={<span className="font-mono text-xs text-ink/50">{purchase.id}</span>} />
+            <DetailRow label="Created" value={purchase.createdAt ? new Date(purchase.createdAt).toLocaleString() : '—'} />
+            <DetailRow label="Last Updated" value={purchase.updatedAt ? new Date(purchase.updatedAt).toLocaleString() : '—'} />
+          </DrawerSection>
+
+        </div>
+      ) : (
+        <div className="p-8 text-center text-ink/50 font-sans">Could not load purchase details.</div>
+      )}
+    </DetailDrawer>
+  )
+}
 
 export function Purchases() {
   const { purchases, isLoading: isPurchasesLoading, addPurchase, deletePurchase } = usePurchases(1, 100)
@@ -16,6 +112,7 @@ export function Purchases() {
   const { user } = useAuth()
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
   const [selectedVariety, setSelectedVariety] = useState('')
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -62,7 +159,8 @@ export function Purchases() {
     }
   }
  
-  const handleDeletePurchase = (id: string) => {
+  const handleDeletePurchase = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (user?.role !== 'ADMIN') {
       alert("Access Denied: Only Administrators can delete purchase records.")
       return
@@ -94,7 +192,11 @@ export function Purchases() {
         <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)] overflow-hidden">
           <div className="md:hidden flex flex-col gap-4 bg-stone pb-4">
             {purchases.map(purchase => (
-              <div key={purchase.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
+              <div
+                key={purchase.id}
+                className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-brass transition-colors"
+                onClick={() => setSelectedPurchaseId(purchase.id)}
+              >
                 <div className="flex justify-between items-start border-b border-brass/10 pb-2">
                   <div>
                     <div className="text-ink font-bold font-mono">{purchase.entryNo}</div>
@@ -117,7 +219,7 @@ export function Purchases() {
                     <div className="text-paddy font-mono font-medium text-lg">
                       +{purchase.items[0]?.quantity.toLocaleString()} <span className="text-xs">Bags ({purchase.items[0]?.kgPerBag ?? 26}kg)</span>
                     </div>
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeletePurchase(purchase.id)}>DELETE</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={(e) => handleDeletePurchase(purchase.id, e)}>DELETE</Button>
                   </div>
                 </div>
               </div>
@@ -147,15 +249,19 @@ export function Purchases() {
             </thead>
             <tbody>
               {purchases.map((purchase) => (
-                <tr key={purchase.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30">
-                  <td className="p-4 text-ink font-bold">{purchase.entryNo}</td>
-                  <td className="p-4 text-ink/70">{purchase.purchaseDate.split('T')[0]}</td>
-                  <td className="p-4 font-sans text-ink">{purchase.supplier?.name}</td>
+                <tr
+                  key={purchase.id}
+                  className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 cursor-pointer"
+                  onClick={() => setSelectedPurchaseId(purchase.id)}
+                >
+                  <td className="p-4 text-ink font-bold font-mono">{purchase.entryNo}</td>
+                  <td className="p-4 text-ink/70 font-mono">{purchase.purchaseDate.split('T')[0]}</td>
+                  <td className="p-4 font-sans text-ink hover:underline">{purchase.supplier?.name}</td>
                   <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full bg-variety-${purchase.items[0]?.variety?.code}`} />
                     {purchase.items[0]?.variety?.name}
                   </td>
-                  <td className="p-4 text-right text-paddy font-medium">
+                  <td className="p-4 text-right text-paddy font-medium font-mono">
                     +{purchase.items[0]?.quantity.toLocaleString()} Bags ({purchase.items[0]?.kgPerBag ?? 26}kg)
                   </td>
                   <td className="p-4 text-right font-mono">
@@ -163,8 +269,11 @@ export function Purchases() {
                     <span className="block text-[10px] text-ink/65">(₹{((purchase.items[0]?.rate ?? 0) / (purchase.items[0]?.kgPerBag ?? 26)).toFixed(2)}/kg)</span>
                   </td>
                   <td className="p-4 text-right font-mono font-medium text-ink">{purchase.totalAmount.toLocaleString()}</td>
-                  <td className="p-4 text-right">
-                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeletePurchase(purchase.id)}>DELETE</Button>
+                  <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" className="h-8 px-2 text-xs mr-1 text-ink/60 hover:bg-ink/10" onClick={() => setSelectedPurchaseId(purchase.id)}>
+                      <Eye size={14} />
+                    </Button>
+                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={(e) => handleDeletePurchase(purchase.id, e)}>DELETE</Button>
                   </td>
                 </tr>
               ))}
@@ -190,6 +299,7 @@ export function Purchases() {
         <Plus size={24} />
       </button>
 
+      {/* Record Purchase Form Drawer */}
       <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="Record Purchase">
         <form onSubmit={handleRecordPurchase} className="flex flex-col gap-6">
           <div className="space-y-2">
@@ -289,6 +399,9 @@ export function Purchases() {
           </div>
         </form>
       </Drawer>
+
+      {/* Purchase Detail Drawer */}
+      <PurchaseDetailDrawer purchaseId={selectedPurchaseId} onClose={() => setSelectedPurchaseId(null)} />
     </div>
   )
 }

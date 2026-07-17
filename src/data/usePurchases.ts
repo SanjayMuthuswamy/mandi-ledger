@@ -92,3 +92,17 @@ export function usePurchases(page = 1, limit = 20) {
     updateStatus: (id: string, status: string) => updatePurchaseStatusMutation.mutateAsync({ id, status }),
   }
 }
+
+export function usePurchaseDetails(id: string | null) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['purchase', id],
+    queryFn: async () => {
+      if (!id) return null
+      const response = await api.get(`/purchases/${id}`)
+      return response
+    },
+    enabled: !!id,
+  })
+
+  return { purchase: data, isLoading, error }
+}

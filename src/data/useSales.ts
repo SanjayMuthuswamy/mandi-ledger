@@ -92,3 +92,17 @@ export function useSales(page = 1, limit = 20) {
     updateStatus: (id: string, status: string) => updateSaleStatusMutation.mutateAsync({ id, status }),
   }
 }
+
+export function useSaleDetails(id: string | null) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['sale', id],
+    queryFn: async () => {
+      if (!id) return null
+      const response = await api.get(`/sales/${id}`)
+      return response
+    },
+    enabled: !!id,
+  })
+
+  return { sale: data, isLoading, error }
+}

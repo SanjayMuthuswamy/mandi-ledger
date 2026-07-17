@@ -4,14 +4,101 @@ import { type VarietyId, useStock } from "@/data/useStock"
 import { GrainGauge } from "@/components/ui/GrainGauge"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
+import { DetailDrawer, DetailRow, DrawerSection } from "@/components/ui/DetailDrawer"
 import { Input } from "@/components/ui/Input"
 import { useAuth } from "@/contexts/AuthContext"
 import { Plus } from "lucide-react"
+
+function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
+  item: any | null
+  onClose: () => void
+  onEdit: (item: any) => void
+  onDelete: (id: string) => void
+}) {
+  if (!item) return null
+
+  const stockPercentage = item.max > 0 ? Math.min(100, Math.round((item.quantity / item.max) * 100)) : 0
+  const isLow = item.quantity < item.threshold
+
+  return (
+    <DetailDrawer
+      isOpen={!!item}
+      onClose={onClose}
+      title={item.varietyName}
+      subtitle={`${item.quantity.toLocaleString()} kg available`}
+    >
+      <div className="divide-y divide-brass/15">
+
+        {/* Stock Overview */}
+        <DrawerSection title="Stock Overview">
+          <div className="mb-4">
+            <GrainGauge
+              quantity={item.quantity}
+              max={item.max}
+              threshold={item.threshold}
+              varietyId={item.varietyId}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`p-3 rounded-sm border ${isLow ? 'border-ledger-red/30 bg-ledger-red/5' : 'border-paddy/30 bg-paddy/5'}`}>
+              <div className="text-[10px] uppercase tracking-widest font-sans font-semibold text-ink/50">Current Stock</div>
+              <div className={`font-mono text-xl font-bold mt-1 ${isLow ? 'text-ledger-red' : 'text-paddy'}`}>
+                {item.quantity.toLocaleString()} kg
+              </div>
+            </div>
+            <div className="p-3 rounded-sm border border-brass/20 bg-ink/5">
+              <div className="text-[10px] uppercase tracking-widest font-sans font-semibold text-ink/50">Utilization</div>
+              <div className="font-mono text-xl font-bold mt-1 text-ink">{stockPercentage}%</div>
+            </div>
+          </div>
+        </DrawerSection>
+
+        {/* Stock Levels */}
+        <DrawerSection title="Stock Levels">
+          <DetailRow label="Available Stock" value={<span className="font-mono font-bold">{item.quantity.toLocaleString()} kg</span>} />
+          <DetailRow label="Min Alert Threshold" value={<span className="font-mono">{item.threshold.toLocaleString()} kg</span>} />
+          <DetailRow label="Max Capacity" value={<span className="font-mono">{item.max.toLocaleString()} kg</span>} />
+          <DetailRow label="Stock Status" value={
+            isLow
+              ? <span className="text-ledger-red text-xs font-bold uppercase tracking-widest">⚠ Low Stock</span>
+              : <span className="text-paddy text-xs font-bold uppercase tracking-widest">✓ Healthy</span>
+          } />
+        </DrawerSection>
+
+        {/* Pricing */}
+        <DrawerSection title="Pricing">
+          <DetailRow label="Unit Price" value={<span className="font-mono font-bold">₹{item.price}/kg</span>} />
+          <DetailRow label="Stock Value" value={<span className="font-mono font-bold text-paddy">₹{(item.quantity * item.price).toLocaleString()}</span>} />
+        </DrawerSection>
+
+        {/* Record Info */}
+        <DrawerSection title="Record Info">
+          <DetailRow label="Variety ID" value={<span className="font-mono text-xs text-ink/50">{item.varietyId}</span>} />
+          <DetailRow label="Last Updated" value={item.lastUpdated || '—'} />
+        </DrawerSection>
+
+        {/* Actions */}
+        <DrawerSection title="Actions">
+          <div className="flex gap-2">
+            <Button variant="ghost" className="flex-1 border border-brass/30 text-xs" onClick={() => { onEdit(item); onClose(); }}>
+              Edit Stock
+            </Button>
+            <Button variant="ghost" className="flex-1 border border-ledger-red/30 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => { onDelete(item.id); onClose(); }}>
+              Delete Entry
+            </Button>
+          </div>
+        </DrawerSection>
+
+      </div>
+    </DetailDrawer>
+  )
+}
 
 export function Stock() {
   const { stock, isLoading, deleteStock, addStock, updateQuantity } = useStock()
   const { user } = useAuth()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
   const [errorMsg, setErrorMsg] = useState('')
 
   const handleAddStock = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -77,7 +164,11 @@ export function Stock() {
         {/* Mobile Cards */}
         <div className="md:hidden flex flex-col gap-4">
           {stock.map(item => (
-            <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-4 relative overflow-hidden">
+            <div
+              key={item.id}
+              className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-4 relative overflow-hidden cursor-pointer hover:border-brass transition-colors"
+              onClick={() => setSelectedItem(item)}
+            >
               <div className="flex justify-between items-start">
                 <div className="font-sans font-medium text-ink flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full bg-variety-${item.varietyId}`} />
@@ -97,12 +188,12 @@ export function Stock() {
               />
               
               <div className="border-t border-brass/20 pt-4 mt-4 flex justify-between items-center">
-                  <div className="text-ink font-medium">₹{item.price}/kg</div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => handleEditStock(item)}>EDIT</Button>
-                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
-                  </div>
+                <div className="text-ink font-medium">₹{item.price}/kg</div>
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => handleEditStock(item)}>EDIT</Button>
+                  <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
                 </div>
+              </div>
             </div>
           ))}
           {stock.length === 0 && (
@@ -125,7 +216,11 @@ export function Stock() {
           </thead>
           <tbody className="divide-y divide-brass/10 font-mono">
             {stock.map((item) => (
-              <tr key={item.id} className="hover:bg-ink/5 transition-colors group">
+              <tr
+                key={item.id}
+                className="hover:bg-ink/5 transition-colors group cursor-pointer"
+                onClick={() => setSelectedItem(item)}
+              >
                 <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full bg-variety-${item.varietyId}`} />
                   {item.varietyName}
@@ -141,7 +236,7 @@ export function Stock() {
                 </td>
                 <td className="p-4">₹{item.price}/kg</td>
                 <td className="p-4 text-ink/70">{item.lastUpdated}</td>
-                <td className="p-4 text-right">
+                <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" className="h-8 px-2 text-xs text-ink hover:bg-ink/10 mr-2" onClick={() => handleEditStock(item)}>EDIT</Button>
                   <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
                 </td>
@@ -166,6 +261,7 @@ export function Stock() {
         <Plus size={24} />
       </button>
 
+      {/* Add Stock Form Drawer */}
       <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setErrorMsg('');}} title="Add Stock">
         <form onSubmit={handleAddStock} className="flex flex-col gap-6">
           {errorMsg && (
@@ -209,6 +305,14 @@ export function Stock() {
           </div>
         </form>
       </Drawer>
+
+      {/* Stock Detail Drawer */}
+      <StockDetailDrawer
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onEdit={handleEditStock}
+        onDelete={handleDeleteStock}
+      />
     </div>
   )
 }
