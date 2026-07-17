@@ -106,11 +106,15 @@ export const CreateSaleSchema = z.object({
     .enum(['PENDING', 'PARTIAL', 'PAID', 'OVERDUE'])
     .optional()
     .default('PENDING'),
+  amountPaid: z.number().nonnegative().optional().default(0),
+  paymentMethod: z.string().optional().nullable(),
   items: z.array(SaleItemSchema).min(1),
 })
 
 export const UpdateSaleStatusSchema = z.object({
   paymentStatus: z.enum(['PENDING', 'PARTIAL', 'PAID', 'OVERDUE']),
+  amountPaid: z.number().nonnegative().optional(),
+  paymentMethod: z.string().optional().nullable(),
 })
 
 // ── Pagination ────────────────────────────────────────────────────────────────

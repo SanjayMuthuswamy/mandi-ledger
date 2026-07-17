@@ -144,19 +144,24 @@ export function generatePDFReport(config: ReportConfig) {
       item.paymentStatus
     ])
   } else if (config.type === 'Sales') {
-    head = [['S.No', 'Date', 'Invoice No', 'Customer', 'Variety', 'Qty (Bags)', 'Rate/Bag', 'Rate/kg', 'Total', 'Status']]
-    body = config.data.map((item, index) => [
-      (index + 1).toString(),
-      new Date(item.saleDate).toLocaleDateString(),
-      item.invoiceNo,
-      item.customer?.name || 'N/A',
-      item.items[0]?.variety?.name || 'N/A',
-      `${item.items[0]?.quantity.toLocaleString()} Bags (${item.items[0]?.kgPerBag ?? 26}kg)`,
-      `Rs. ${item.items[0]?.rate.toFixed(2)}`,
-      `Rs. ${((item.items[0]?.rate ?? 0) / (item.items[0]?.kgPerBag ?? 26)).toFixed(2)}`,
-      `Rs. ${item.totalAmount.toLocaleString()}`,
-      item.paymentStatus
-    ])
+    head = [['S.No', 'Date', 'Invoice No', 'Customer', 'Variety', 'Qty (Bags)', 'Total', 'Paid', 'Balance', 'Method', 'Status']]
+    body = config.data.map((item, index) => {
+      const paid = item.amountPaid ?? 0
+      const balance = item.totalAmount - paid
+      return [
+        (index + 1).toString(),
+        new Date(item.saleDate).toLocaleDateString(),
+        item.invoiceNo,
+        item.customer?.name || 'N/A',
+        item.items[0]?.variety?.name || 'N/A',
+        item.items[0]?.quantity?.toLocaleString() || '0',
+        `Rs. ${item.totalAmount.toLocaleString()}`,
+        `Rs. ${paid.toLocaleString()}`,
+        `Rs. ${balance.toLocaleString()}`,
+        item.paymentMethod || '—',
+        item.paymentStatus
+      ]
+    })
   }
 
   autoTable(doc, {

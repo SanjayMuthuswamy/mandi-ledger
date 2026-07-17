@@ -103,6 +103,8 @@ export async function createSale(req: Request, res: Response) {
       })
     }
 
+    const finalAmountPaid = body.paymentStatus === 'PAID' ? totalAmount : (body.amountPaid ?? 0)
+
     return tx.sale.create({
       data: {
         invoiceNo,
@@ -110,6 +112,8 @@ export async function createSale(req: Request, res: Response) {
         saleDate: new Date(body.saleDate),
         totalAmount,
         paymentStatus: body.paymentStatus,
+        amountPaid: finalAmountPaid,
+        paymentMethod: body.paymentMethod,
         createdBy: req.user?.sub,
         items: {
           create: body.items.map((item) => ({
@@ -145,10 +149,23 @@ export async function getSale(req: Request, res: Response) {
 
 // ── PATCH /api/sales/:id/status ───────────────────────────────────────────────
 export async function updateSaleStatus(req: Request, res: Response) {
-  const { paymentStatus } = UpdateSaleStatusSchema.parse(req.body)
+  const { paymentStatus, amountPaid, paymentMethod } = UpdateSaleStatusSchema.parse(req.body)
+  const existing = await prisma.sale.findUniqueOrThrow({ where: { id: String(req.params.id) } })
+
+  let finalAmountPaid = amountPaid
+  if (paymentStatus === 'PAID' && amountPaid === undefined) {
+    finalAmountPaid = existing.totalAmount
+  } else if (paymentStatus === 'PENDING' && amountPaid === undefined) {
+    finalAmountPaid = 0
+  }
+
   const sale = await prisma.sale.update({
     where: { id: String(req.params.id) },
-    data: { paymentStatus },
+    data: { 
+      paymentStatus,
+      ...(finalAmountPaid !== undefined ? { amountPaid: finalAmountPaid } : {}),
+      ...(paymentMethod !== undefined ? { paymentMethod } : {}),
+    },
   })
   res.json(sale)
 }

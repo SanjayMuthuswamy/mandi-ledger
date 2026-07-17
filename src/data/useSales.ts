@@ -22,6 +22,8 @@ export interface Sale {
   saleDate: string
   totalAmount: number
   paymentStatus: string
+  amountPaid?: number
+  paymentMethod?: string | null
   customer: {
     id: string
     name: string
@@ -73,11 +75,16 @@ export function useSales(page = 1, limit = 20) {
   })
 
   const updateSaleStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: string }) => {
-      return await api.patch(`/sales/${id}/status`, { paymentStatus: status })
+    mutationFn: async ({ id, status, amountPaid, paymentMethod }: { id: string, status: string, amountPaid?: number, paymentMethod?: string | null }) => {
+      return await api.patch(`/sales/${id}/status`, { 
+        paymentStatus: status,
+        ...(amountPaid !== undefined ? { amountPaid } : {}),
+        ...(paymentMethod !== undefined ? { paymentMethod } : {})
+      })
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['sale', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
@@ -89,7 +96,8 @@ export function useSales(page = 1, limit = 20) {
     error,
     addSale: (data: any) => addSaleMutation.mutateAsync(data),
     deleteSale: (id: string) => deleteSaleMutation.mutateAsync(id),
-    updateStatus: (id: string, status: string) => updateSaleStatusMutation.mutateAsync({ id, status }),
+    updateStatus: (id: string, status: string, amountPaid?: number, paymentMethod?: string | null) => 
+      updateSaleStatusMutation.mutateAsync({ id, status, amountPaid, paymentMethod }),
   }
 }
 

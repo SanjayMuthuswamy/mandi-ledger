@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
@@ -12,6 +12,35 @@ import { Plus, ShoppingCart, Loader2, Eye } from "lucide-react"
 
 function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose: () => void }) {
   const { sale, isLoading } = useSaleDetails(saleId)
+  const { updateStatus } = useSales()
+
+  const [status, setStatus] = useState('')
+  const [amtPaid, setAmtPaid] = useState('')
+  const [method, setMethod] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  useEffect(() => {
+    if (sale) {
+      setStatus(sale.paymentStatus)
+      setAmtPaid(sale.amountPaid?.toString() || '0')
+      setMethod(sale.paymentMethod || '')
+    }
+  }, [sale])
+
+  const handleUpdatePayment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!sale) return
+    setIsUpdating(true)
+    try {
+      const paidVal = Number(amtPaid) || 0
+      await updateStatus(sale.id, status, paidVal, method)
+      alert("Payment details updated successfully.")
+    } catch (err: any) {
+      alert(err.data?.error || "Failed to update payment details.")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   return (
     <DetailDrawer
@@ -82,11 +111,103 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
             ))}
           </DrawerSection>
 
+          {/* Update Payment Details */}
+          <DrawerSection title="Update Payment Status">
+            <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => {
+                      const newStatus = e.target.value
+                      setStatus(newStatus)
+                      if (newStatus === 'PAID') {
+                        setAmtPaid(sale.totalAmount.toString())
+                      } else if (newStatus === 'PENDING') {
+                        setAmtPaid('0')
+                      }
+                    }}
+                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                  >
+                    <option value="PENDING">PENDING</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PAID">PAID</option>
+                    <option value="OVERDUE">OVERDUE</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
+                  <input
+                    type="text"
+                    value={method}
+                    onChange={(e) => setMethod(e.target.value)}
+                    placeholder="Cash, UPI, NEFT"
+                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={sale.totalAmount}
+                    step="0.01"
+                    value={amtPaid}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 0
+                      setAmtPaid(e.target.value)
+                      if (val >= sale.totalAmount) {
+                        setStatus('PAID')
+                      } else if (val > 0 && val < sale.totalAmount) {
+                        setStatus('PARTIAL')
+                      } else if (val === 0) {
+                        setStatus('PENDING')
+                      }
+                    }}
+                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold block">Remaining Balance</span>
+                  <div className="h-9 flex items-center px-1 font-mono text-xs font-bold">
+                    {(() => {
+                      const paid = Number(amtPaid) || 0
+                      const remaining = sale.totalAmount - paid
+                      if (remaining <= 0) {
+                        return <span className="text-paddy">₹0 (Settle)</span>
+                      }
+                      return <span className="text-ledger-red">₹{remaining.toLocaleString()}</span>
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isUpdating}
+                className="w-full text-xs py-2 uppercase tracking-wider font-semibold border border-brass/20"
+              >
+                {isUpdating ? "Saving..." : "Update Details"}
+              </Button>
+            </form>
+          </DrawerSection>
+
           {/* Transaction Summary */}
           <DrawerSection title="Transaction Summary">
             <DetailRow label="Total Bags" value={<span className="font-mono">{sale.items?.reduce((s: number, i: any) => s + (i.quantity ?? 0), 0)} bags</span>} />
             <DetailRow label="Total Weight" value={<span className="font-mono">{sale.items?.reduce((s: number, i: any) => s + (i.quantity ?? 0) * (i.kgPerBag ?? 26), 0).toLocaleString()} kg</span>} />
-            <DetailRow label="Grand Total" value={<span className="font-mono font-bold text-paddy">₹{sale.totalAmount?.toLocaleString()}</span>} />
+            <DetailRow label="Grand Total" value={<span className="font-mono font-bold">₹{sale.totalAmount?.toLocaleString()}</span>} />
+            <DetailRow label="Amount Paid" value={<span className="font-mono font-bold text-paddy">₹{(sale.amountPaid ?? 0).toLocaleString()}</span>} />
+            <DetailRow label="Remaining Balance" value={
+              <span className="font-mono font-bold text-ledger-red">
+                ₹{((sale.totalAmount ?? 0) - (sale.amountPaid ?? 0)).toLocaleString()}
+              </span>
+            } />
+            <DetailRow label="Payment Method" value={sale.paymentMethod || '—'} />
             <DetailRow label="Payment Status" value={<StatusBadge status={sale.paymentStatus} />} />
           </DrawerSection>
 

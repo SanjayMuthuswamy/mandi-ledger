@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext'
 function Ticker() {
   const { summary } = useDashboard()
   const { logout } = useAuth()
-  
+
   return (
     <div className="bg-ink text-stone border-b border-brass flex items-center justify-between px-4 md:px-6 py-4 overflow-hidden">
       <div className="flex gap-8 md:gap-12 overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full md:w-auto flex-1">
@@ -85,15 +85,16 @@ function LedgerIndex() {
   const location = useLocation()
   const { logout } = useAuth()
   const [isMoreOpen, setIsMoreOpen] = useState(false)
-  
+
   const visibleMobileItems = ALL_NAV_ITEMS.slice(0, 4)
   const hiddenMobileItems = ALL_NAV_ITEMS.slice(4).filter(i => !i.mobileHidden)
-  
+
   return (
     <>
       {/* Desktop Sidebar */}
       <nav className="hidden md:flex w-56 border-r border-brass/20 flex-col pt-8 pb-8 h-full bg-stone overflow-y-auto hide-scrollbar">
-        <div className="px-8 mb-10">
+        <div className="px-8 mb-10 flex flex-col gap-3">
+          <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain bg-white rounded-md p-1 border border-brass/20" />
           <h2 className="font-display text-ink uppercase tracking-tight text-xl drop-shadow-stamp origin-left inline-block">Ledger Index</h2>
         </div>
         <div className="flex-1 flex flex-col gap-1 pb-4">
@@ -143,7 +144,7 @@ function LedgerIndex() {
               </Link>
             )
           })}
-          
+
           <button
             onClick={() => setIsMoreOpen(true)}
             className="flex flex-col items-center justify-center w-[20%] h-full gap-1 transition-colors relative text-ink/50"
@@ -173,8 +174,8 @@ function LedgerIndex() {
               </Link>
             )
           })}
-          <button 
-            onClick={() => { setIsMoreOpen(false); logout(); }} 
+          <button
+            onClick={() => { setIsMoreOpen(false); logout(); }}
             className="flex items-center gap-4 py-4 px-2 transition-colors text-ledger-red/70 hover:text-ledger-red mt-4"
           >
             <LogOut size={20} />

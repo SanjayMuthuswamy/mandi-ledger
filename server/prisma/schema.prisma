@@ -194,6 +194,8 @@ model Sale {
   saleDate      DateTime
   totalAmount   Float
   paymentStatus PaymentStatus @default(PENDING)
+  amountPaid    Float         @default(0)
+  paymentMethod String?
 
   customer      Customer   @relation(fields: [customerId], references: [id])
   items         SaleItem[]
