@@ -121,7 +121,7 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
           {/* Update Payment Details */}
           <DrawerSection title="Update Payment Status">
             <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
-              <div className={(status === 'PARTIAL' || status === 'PAID') ? "grid grid-cols-2 gap-3" : "w-full"}>
+              <div className={status === 'PARTIAL' ? "grid grid-cols-2 gap-3" : "w-full"}>
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
                   <select
@@ -144,7 +144,7 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
                     <option value="OVERDUE">OVERDUE</option>
                   </select>
                 </div>
-                {(status === 'PARTIAL' || status === 'PAID') && (
+                {status === 'PARTIAL' && (
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
                     <input
@@ -158,7 +158,7 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
                 )}
               </div>
 
-              {(status === 'PARTIAL' || status === 'PAID') && (
+              {status === 'PARTIAL' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid (₹)</label>
