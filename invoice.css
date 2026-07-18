@@ -405,7 +405,7 @@ body {
 .col-hsn   { width: 70px;  text-align: center; font-family: var(--font-mono); }
 .col-qty   { width: 42px;  text-align: right;  font-family: var(--font-mono); }
 .col-unit  { width: 38px;  text-align: center; }
-.col-rate  { width: 58px;  text-align: right;  font-family: var(--font-mono); }
+.col-rate  { width: 58px;  text-align: right;  font-family: var(--font-mono); font-weight: 600; }
 .col-disc  { width: 50px;  text-align: right;  font-family: var(--font-mono); }
 .col-gst   { width: 40px;  text-align: center; font-family: var(--font-mono); }
 .col-tax   { width: 58px;  text-align: right;  font-family: var(--font-mono); }
