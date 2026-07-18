@@ -187,7 +187,33 @@ function renderInvoice(data) {
   setText('footer-phone',    data.footer_phone || data.company_phone);
   hideIfEmpty('website-sep', data.company_website);
 
-  // ── Invoice Metadata ──────────────────────────────────────────────────────
+  // ── Invoice Metadata Labels (dynamic translation for Reports) ─────────────
+  const metaBoxHeader = document.querySelector('.inv-meta-heading');
+  if (metaBoxHeader) {
+    metaBoxHeader.innerText = data.is_report ? "Report Details" : "Invoice Details";
+  }
+  
+  const labelsMap = {
+    'invoice-number': data.is_report ? 'Report ID' : 'Invoice No.',
+    'invoice-date': data.is_report ? 'Report Date' : 'Invoice Date',
+    'due-date': data.is_report ? 'Date Range' : 'Due Date',
+    'vehicle-number': data.is_report ? 'Total Quantity' : 'Vehicle No.',
+    'payment-mode': data.is_report ? 'Total Records' : 'Payment Mode',
+    'invoice-status': data.is_report ? 'Report Status' : 'Status'
+  };
+  
+  for (const [id, labelText] of Object.entries(labelsMap)) {
+    const el = document.getElementById(id);
+    if (el) {
+      const tr = el.closest('tr');
+      if (tr) {
+        const th = tr.querySelector('th');
+        if (th) th.innerText = labelText;
+      }
+    }
+  }
+
+  // ── Invoice Metadata Values ───────────────────────────────────────────────
   setText('invoice-number',  data.invoice_number);
   setText('invoice-date',    data.invoice_date);
   setText('due-date',        data.due_date);
@@ -203,7 +229,7 @@ function renderInvoice(data) {
     statusBadge.className = 'status-badge status-' + s;
   }
 
-  // ── Customer Billing ──────────────────────────────────────────────────────
+  // ── Customer/Supplier Billing ─────────────────────────────────────────────
   setText('customer-name',    data.customer_name);
   setText('customer-mobile',  data.customer_mobile);
   setText('customer-address', data.customer_address);
@@ -227,7 +253,111 @@ function renderInvoice(data) {
   hideIfEmpty('delivery-note-row', data.delivery_note);
   setText('po-number',       data.po_number);
 
-  // ── Items Table ───────────────────────────────────────────────────────────
+  // ── Dynamic Table Headers Setup ───────────────────────────────────────────
+  const itemsTable = document.querySelector('.items-table');
+  if (itemsTable) {
+    if (data.is_report) {
+      if (data.report_type === 'customer' || data.report_type === 'supplier') {
+        itemsTable.innerHTML = `
+          <thead>
+            <tr>
+              <th class="col-sno" style="width: 8%;">S.No</th>
+              <th class="col-date" style="width: 15%;">Date</th>
+              <th class="col-invoice" style="width: 15%;">Doc No.</th>
+              <th class="col-variety" style="width: 25%;">Variety Name</th>
+              <th class="col-qty" style="width: 12%;">Qty (Bags)</th>
+              <th class="col-rate" style="width: 12%;">Rate (₹)</th>
+              <th class="col-total" style="width: 13%;">Total (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+          <tfoot>
+            <tr class="totals-row">
+              <td colspan="4">Totals</td>
+              <td id="total-quantity" class="num-cell"></td>
+              <td></td>
+              <td id="subtotal" class="num-cell"></td>
+            </tr>
+          </tfoot>
+        `;
+      } else if (data.report_type === 'inventory') {
+        itemsTable.innerHTML = `
+          <thead>
+            <tr>
+              <th class="col-sno" style="width: 8%;">S.No</th>
+              <th class="col-variety" style="width: 30%;">Rice Variety Name</th>
+              <th class="col-qty" style="width: 20%;">Current Stock (kg)</th>
+              <th class="col-rate" style="width: 20%;">Unit Price (₹/kg)</th>
+              <th class="col-total" style="width: 22%;">Stock Value (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+          <tfoot>
+            <tr class="totals-row">
+              <td colspan="2">Totals</td>
+              <td id="total-quantity" class="num-cell"></td>
+              <td></td>
+              <td id="subtotal" class="num-cell"></td>
+            </tr>
+          </tfoot>
+        `;
+      } else {
+        itemsTable.innerHTML = `
+          <thead>
+            <tr>
+              <th class="col-sno" style="width: 8%;">S.No</th>
+              <th class="col-date" style="width: 15%;">Date</th>
+              <th class="col-invoice" style="width: 15%;">Doc No.</th>
+              <th class="col-name" style="width: 25%;">${data.report_type === 'sales' ? 'Customer' : 'Supplier'}</th>
+              <th class="col-variety" style="width: 15%;">Bags</th>
+              <th class="col-total" style="width: 22%;">Total (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+          <tfoot>
+            <tr class="totals-row">
+              <td colspan="4">Totals</td>
+              <td id="total-quantity" class="num-cell"></td>
+              <td id="subtotal" class="num-cell"></td>
+            </tr>
+          </tfoot>
+        `;
+      }
+    } else {
+      itemsTable.innerHTML = `
+        <thead>
+          <tr>
+            <th class="col-sno">S.No</th>
+            <th class="col-name">Item Name</th>
+            <th class="col-desc">Description</th>
+            <th class="col-hsn">HSN/SAC</th>
+            <th class="col-qty">Qty</th>
+            <th class="col-unit">Unit</th>
+            <th class="col-rate">Rate (₹)</th>
+            <th class="col-disc">Discount</th>
+            <th class="col-gst">GST %</th>
+            <th class="col-tax">Tax Amt (₹)</th>
+            <th class="col-total">Total (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="items-body"></tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td colspan="4">Totals</td>
+            <td id="total-quantity" class="num-cell"></td>
+            <td></td>
+            <td></td>
+            <td id="total-discount" class="num-cell"></td>
+            <td></td>
+            <td id="total-tax" class="num-cell"></td>
+            <td id="subtotal" class="num-cell"></td>
+          </tr>
+        </tfoot>
+      `;
+    }
+  }
+
+  // ── Items Table Rows Rendering ────────────────────────────────────────────
   const itemsBody = document.getElementById('items-body');
   if (itemsBody) {
     itemsBody.innerHTML = '';
@@ -239,129 +369,193 @@ function renderInvoice(data) {
 
     if (data.items && Array.isArray(data.items)) {
       data.items.forEach((item, index) => {
-        const itemBase     = item.quantity * item.rate;
-        const itemDiscount = item.discount || 0;
-        const taxable      = itemBase - itemDiscount;
-        const gstPct       = item.gst_percent || 0;
-        const taxAmt       = +(taxable * gstPct / 100).toFixed(2);
-        const itemTotal    = taxable + taxAmt;
-
-        totalQty      += item.quantity;
-        totalDiscount += itemDiscount;
-        subtotal      += itemTotal;
-        totalTax      += taxAmt;
-
         const row = document.createElement('tr');
         row.className = 'item-row';
-        row.innerHTML = `
-          <td class="col-sno">${index + 1}</td>
-          <td class="col-name">${item.name || item.description || ''}</td>
-          <td class="col-desc">${item.description || ''}</td>
-          <td class="col-hsn">${item.hsn || ''}</td>
-          <td class="col-qty">${item.quantity.toLocaleString()}</td>
-          <td class="col-unit">${item.unit || 'Bags'}</td>
-          <td class="col-rate">${item.rate.toFixed(2)}</td>
-          <td class="col-disc">${itemDiscount > 0 ? itemDiscount.toFixed(2) : '—'}</td>
-          <td class="col-gst">${gstPct > 0 ? gstPct + '%' : '—'}</td>
-          <td class="col-tax">${taxAmt > 0 ? taxAmt.toFixed(2) : '—'}</td>
-          <td class="col-total">${itemTotal.toFixed(2)}</td>
-        `;
+        
+        if (data.is_report) {
+          totalQty += item.quantity;
+          subtotal += item.total;
+          
+          if (data.report_type === 'customer' || data.report_type === 'supplier') {
+            row.innerHTML = `
+              <td class="col-sno">${index + 1}</td>
+              <td class="col-date">${item.date}</td>
+              <td class="col-invoice">${item.docNo}</td>
+              <td class="col-variety">${item.varietyName}</td>
+              <td class="col-qty">${item.quantity.toLocaleString()}</td>
+              <td class="col-rate">${item.rate.toFixed(2)}</td>
+              <td class="col-total">${item.total.toFixed(2)}</td>
+            `;
+          } else if (data.report_type === 'inventory') {
+            row.innerHTML = `
+              <td class="col-sno">${index + 1}</td>
+              <td class="col-variety">${item.varietyName}</td>
+              <td class="col-qty">${item.quantity.toLocaleString()}</td>
+              <td class="col-rate">${item.rate.toFixed(2)}</td>
+              <td class="col-total">${item.total.toFixed(2)}</td>
+            `;
+          } else {
+            row.innerHTML = `
+              <td class="col-sno">${index + 1}</td>
+              <td class="col-date">${item.date}</td>
+              <td class="col-invoice">${item.docNo}</td>
+              <td class="col-name">${item.name}</td>
+              <td class="col-variety">${item.quantity.toLocaleString()} Bags</td>
+              <td class="col-total">${item.total.toFixed(2)}</td>
+            `;
+          }
+        } else {
+          const itemBase     = item.quantity * item.rate;
+          const itemDiscount = item.discount || 0;
+          const taxable      = itemBase - itemDiscount;
+          const gstPct       = item.gst_percent || 0;
+          const taxAmt       = +(taxable * gstPct / 100).toFixed(2);
+          const itemTotal    = taxable + taxAmt;
+
+          totalQty      += item.quantity;
+          totalDiscount += itemDiscount;
+          subtotal      += itemTotal;
+          totalTax      += taxAmt;
+
+          row.innerHTML = `
+            <td class="col-sno">${index + 1}</td>
+            <td class="col-name">${item.name || item.description || ''}</td>
+            <td class="col-desc">${item.description || ''}</td>
+            <td class="col-hsn">${item.hsn || ''}</td>
+            <td class="col-qty">${item.quantity.toLocaleString()}</td>
+            <td class="col-unit">${item.unit || 'Bags'}</td>
+            <td class="col-rate">${item.rate.toFixed(2)}</td>
+            <td class="col-disc">${itemDiscount > 0 ? itemDiscount.toFixed(2) : '—'}</td>
+            <td class="col-gst">${gstPct > 0 ? gstPct + '%' : '—'}</td>
+            <td class="col-tax">${taxAmt > 0 ? taxAmt.toFixed(2) : '—'}</td>
+            <td class="col-total">${itemTotal.toFixed(2)}</td>
+          `;
+        }
         itemsBody.appendChild(row);
       });
     }
 
-    // ── tfoot totals ─────────────────────────────────────────────────────
     const fmtINR = (v) => '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    setText('total-quantity', totalQty.toLocaleString());
-    setText('total-discount', totalDiscount > 0 ? totalDiscount.toFixed(2) : '—');
-    setText('total-tax',      totalTax > 0 ? totalTax.toFixed(2) : '—');
-    setText('subtotal',       subtotal.toFixed(2));
+    // Update tfoot totals
+    setText('total-quantity', data.report_type === 'inventory' ? totalQty.toLocaleString() + ' kg' : totalQty.toLocaleString());
+    if (!data.is_report) {
+      setText('total-discount', totalDiscount > 0 ? totalDiscount.toFixed(2) : '—');
+      setText('total-tax',      totalTax > 0 ? totalTax.toFixed(2) : '—');
+    }
+    setText('subtotal', subtotal.toFixed(2));
 
-    // ── Summary totals ────────────────────────────────────────────────────
-    // Taxable amount = subtotal - tax
-    const taxableAmt = subtotal - totalTax;
+    // Update summary totals
     const grandTotal = subtotal;
+    setText('total', fmtINR(grandTotal));
 
-    setText('subtotal-display', fmtINR(subtotal));
-    setText('taxable-amount',   fmtINR(taxableAmt));
+    if (!data.is_report) {
+      const taxableAmt = subtotal - totalTax;
+      setText('subtotal-display', fmtINR(subtotal));
+      setText('taxable-amount',   fmtINR(taxableAmt));
 
-    // Discount row
-    if (totalDiscount > 0) {
-      setText('discount-display', '- ' + fmtINR(totalDiscount));
-    } else {
-      hideIfEmpty('discount-row', '');
+      if (totalDiscount > 0) {
+        setText('discount-display', '- ' + fmtINR(totalDiscount));
+      } else {
+        hideIfEmpty('discount-row', '');
+      }
+
+      const isInterstate = (data.place_of_supply || '').toLowerCase().indexOf('33') === -1 ||
+                           (data.customer_gstin || '').substring(0, 2) !== '33';
+      if (isInterstate) {
+        setText('igst-amount', fmtINR(totalTax));
+        hideIfEmpty('cgst-row', '');
+        hideIfEmpty('sgst-row', '');
+      } else {
+        setText('cgst-amount', fmtINR(totalTax / 2));
+        setText('sgst-amount', fmtINR(totalTax / 2));
+        hideIfEmpty('igst-row', '');
+      }
+      if (totalTax === 0) {
+        hideIfEmpty('cgst-row', '');
+        hideIfEmpty('sgst-row', '');
+        hideIfEmpty('igst-row', '');
+      }
+
+      const rounded   = Math.round(grandTotal);
+      const roundOff  = +(rounded - grandTotal).toFixed(2);
+      if (roundOff !== 0) {
+        setText('round-off', (roundOff >= 0 ? '+ ' : '') + fmtINR(Math.abs(roundOff)));
+      } else {
+        hideIfEmpty('roundoff-row', '');
+      }
+      setText('total', fmtINR(rounded || grandTotal));
+      setText('amount-in-words', numberToIndianRupeesWords(rounded || grandTotal));
     }
-
-    // GST split: CGST + SGST (intrastate) or IGST (interstate)
-    const isInterstate = (data.place_of_supply || '').toLowerCase().indexOf('33') === -1 ||
-                         (data.customer_gstin || '').substring(0, 2) !== '33';
-    if (isInterstate) {
-      setText('igst-amount', fmtINR(totalTax));
-      hideIfEmpty('cgst-row', '');
-      hideIfEmpty('sgst-row', '');
-    } else {
-      setText('cgst-amount', fmtINR(totalTax / 2));
-      setText('sgst-amount', fmtINR(totalTax / 2));
-      hideIfEmpty('igst-row', '');
-    }
-    if (totalTax === 0) {
-      hideIfEmpty('cgst-row', '');
-      hideIfEmpty('sgst-row', '');
-      hideIfEmpty('igst-row', '');
-    }
-
-    // Round off
-    const rounded   = Math.round(grandTotal);
-    const roundOff  = +(rounded - grandTotal).toFixed(2);
-    if (roundOff !== 0) {
-      setText('round-off', (roundOff >= 0 ? '+ ' : '') + fmtINR(Math.abs(roundOff)));
-    } else {
-      hideIfEmpty('roundoff-row', '');
-    }
-
-    // Grand total (existing ID preserved)
-    setText('total', fmtINR(rounded || grandTotal));
-
-    // Amount in Words (existing ID preserved)
-    setText('amount-in-words', numberToIndianRupeesWords(rounded || grandTotal));
   }
 
-  // ── Bank & Payment ────────────────────────────────────────────────────────
-  setText('bank-name',       data.bank_name);
-  setText('account-number',  data.account_number);
-  setText('ifsc',            data.ifsc);
-  setText('upi-id',          data.upi_id);
-  hideIfEmpty('upi-row',     data.upi_id);
-
-  const payStatusEl = document.getElementById('pay-status');
-  if (payStatusEl) {
-    const ps = data.payment_status || data.invoice_status || 'PENDING';
-    payStatusEl.innerText = ps === 'PENDING' ? 'UNPAID' : ps;
-    payStatusEl.className = 'status-badge status-' + ps;
-  }
-
-  setText('pay-mode-right',   data.payment_mode_right || data.payment_mode);
-  setText('reference-number', data.reference_number);
-  hideIfEmpty('ref-row',      data.reference_number);
-
-  // ── Notes ─────────────────────────────────────────────────────────────────
-  setText('terms-conditions', data.terms_conditions);
-  hideIfEmpty('terms-block',  data.terms_conditions);
-  setText('customer-notes',   data.customer_notes);
-  hideIfEmpty('cust-notes-block', data.customer_notes);
-  setText('remarks',          data.remarks);
-  hideIfEmpty('remarks-block', data.remarks);
-
-  // Hide entire notes card if all empty
+  // ── Bank, Notes, Signature Layout Configuration ──────────────────────────
+  const amountWordsBox = document.querySelector('.amount-words-box');
+  const paymentInfoCard = document.querySelector('.payment-info-card');
   const notesCard = document.getElementById('notes-card');
-  if (notesCard && !data.terms_conditions && !data.customer_notes && !data.remarks) {
-    notesCard.classList.add('hidden');
-  }
+  const signatureSection = document.querySelector('.signature-section');
+  const supplyCard = document.querySelector('.supply-card');
+  
+  if (data.is_report) {
+    if (amountWordsBox) amountWordsBox.style.display = 'none';
+    if (paymentInfoCard) paymentInfoCard.style.display = 'none';
+    if (notesCard) notesCard.style.display = 'none';
+    if (signatureSection) signatureSection.style.display = 'none';
+    if (supplyCard) supplyCard.style.display = 'none';
+    
+    // Hide details invoice fields not used in report summary card
+    hideIfEmpty('discount-row', '');
+    hideIfEmpty('cgst-row', '');
+    hideIfEmpty('sgst-row', '');
+    hideIfEmpty('igst-row', '');
+    hideIfEmpty('roundoff-row', '');
+    
+    const subtotalDisplayRow = document.getElementById('subtotal-display')?.closest('.totals-row-item');
+    if (subtotalDisplayRow) subtotalDisplayRow.style.display = 'none';
+    
+    const taxableAmountRow = document.getElementById('taxable-amount')?.closest('.totals-row-item');
+    if (taxableAmountRow) taxableAmountRow.style.display = 'none';
+  } else {
+    if (amountWordsBox) amountWordsBox.style.display = '';
+    if (paymentInfoCard) paymentInfoCard.style.display = '';
+    if (notesCard) notesCard.style.display = '';
+    if (signatureSection) signatureSection.style.display = '';
+    if (supplyCard) supplyCard.style.display = '';
 
-  // ── Signature ─────────────────────────────────────────────────────────────
-  setText('authorized-signatory',  data.authorized_signatory);
-  setText('signatory-company-name', data.company_name);
+    // ── Bank & Payment values ───────────────────────────────────────────────
+    setText('bank-name',       data.bank_name);
+    setText('account-number',  data.account_number);
+    setText('ifsc',            data.ifsc);
+    setText('upi-id',          data.upi_id);
+    hideIfEmpty('upi-row',     data.upi_id);
+
+    const payStatusEl = document.getElementById('pay-status');
+    if (payStatusEl) {
+      const ps = data.payment_status || data.invoice_status || 'PENDING';
+      payStatusEl.innerText = ps === 'PENDING' ? 'UNPAID' : ps;
+      payStatusEl.className = 'status-badge status-' + ps;
+    }
+
+    setText('pay-mode-right',   data.payment_mode_right || data.payment_mode);
+    setText('reference-number', data.reference_number);
+    hideIfEmpty('ref-row',      data.reference_number);
+
+    // ── Notes values ────────────────────────────────────────────────────────
+    setText('terms-conditions', data.terms_conditions);
+    hideIfEmpty('terms-block',  data.terms_conditions);
+    setText('customer-notes',   data.customer_notes);
+    hideIfEmpty('cust-notes-block', data.customer_notes);
+    setText('remarks',          data.remarks);
+    hideIfEmpty('remarks-block', data.remarks);
+
+    if (notesCard && !data.terms_conditions && !data.customer_notes && !data.remarks) {
+      notesCard.classList.add('hidden');
+    }
+
+    // ── Signature values ────────────────────────────────────────────────────
+    setText('authorized-signatory',  data.authorized_signatory);
+    setText('signatory-company-name', data.company_name);
+  }
 
   // ── Requested By ──────────────────────────────────────────────────────────
   const reqContainer = document.getElementById('requested-by-container');
@@ -381,6 +575,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const saleId = urlParams.get('saleId');
   const purchaseId = urlParams.get('purchaseId');
+  const customerId = urlParams.get('customerId');
+  const supplierId = urlParams.get('supplierId');
+  const reportType = urlParams.get('reportType');
 
   if (saleId) {
     try {
@@ -604,6 +801,358 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.error(err);
       alert('Error loading purchase record: ' + err.message);
+      renderInvoice(defaultInvoiceData);
+    }
+  } else if (customerId) {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/customers/${customerId}`, { headers });
+      if (!response.ok) throw new Error('Failed to fetch customer details');
+      const customer = await response.json();
+
+      // Retrieve date range filters if passed
+      const startDate = urlParams.get('startDate') || '';
+      const endDate = urlParams.get('endDate') || '';
+      let dateRangeStr = 'All Time';
+      if (startDate || endDate) {
+        dateRangeStr = `${startDate || 'Start'} to ${endDate || 'End'}`;
+      }
+
+      // Filter customer sales by dates
+      const filteredSales = (customer.sales || []).filter(s => {
+        const dateStr = s.saleDate?.split('T')[0];
+        if (startDate && dateStr < startDate) return false;
+        if (endDate && dateStr > endDate) return false;
+        return true;
+      });
+
+      // Change label of invoice to "CUSTOMER LEDGER"
+      const taxInvoiceLabel = document.querySelector('.tax-invoice-label');
+      if (taxInvoiceLabel) taxInvoiceLabel.innerText = "CUSTOMER LEDGER";
+      
+      const subtitleLabel = document.querySelector('.invoice-subtitle');
+      if (subtitleLabel) subtitleLabel.innerText = "Sales Transaction History";
+
+      const billToLabel = document.querySelector('.bill-to-card .card-heading');
+      if (billToLabel) billToLabel.innerText = "Customer Details";
+
+      // Parse customer address for city and pin code
+      let customerAddress = customer.address || "-";
+      let customerCity = "-";
+      let customerPin = "-";
+      
+      const pinMatch = customerAddress.match(/\b\d{6}\b/);
+      if (pinMatch) {
+        customerPin = pinMatch[0];
+        customerAddress = customerAddress.replace(pinMatch[0], "").trim();
+      }
+      customerAddress = customerAddress.replace(/,?\s*$/, "").trim(); // Clean trailing commas
+      
+      const addressParts = customerAddress.split(/,\s*/);
+      if (addressParts.length > 1) {
+        customerCity = addressParts[addressParts.length - 1];
+      }
+
+      const totalQty = filteredSales.reduce((acc, s) => acc + (s.items?.[0]?.quantity || 0), 0);
+
+      // Prepare items list for table: S.No, Date, Doc No., Variety, Bags, Rate, Total Amount
+      const items = filteredSales.map(s => ({
+        date: new Date(s.saleDate).toLocaleDateString('en-GB'),
+        docNo: s.invoiceNo,
+        varietyName: s.items?.[0]?.variety?.name || "-",
+        quantity: s.items?.[0]?.quantity || 0,
+        rate: s.items?.[0]?.rate || 0,
+        total: s.totalAmount
+      }));
+
+      // Map to renderInvoice structure
+      const invoiceData = {
+        company_logo:    "logo.png",
+        company_name:    "MB BHARATH RICE MUNDY",
+        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_phone:   "+91 99942 80252, +91 95976 90100",
+        company_email:   "-",
+        company_gstin:   "-",
+        company_pan:     "-",
+        company_website: "-",
+
+        is_report: true,
+        report_type: 'customer',
+
+        invoice_number:  `CUST-REP-${customer.id.substring(0, 5).toUpperCase()}`,
+        invoice_date:    new Date().toLocaleDateString('en-GB'),
+        due_date:        dateRangeStr,
+        vehicle_number:  `${totalQty.toLocaleString()} Bags`,
+        payment_mode:    `${filteredSales.length} Transactions`,
+        invoice_status:  "GENERATED",
+
+        // Customer details
+        customer_name:    customer.name,
+        customer_mobile:  customer.phone || "-",
+        customer_address: customerAddress,
+        customer_city:    customerCity,
+        customer_gstin:   customer.gstNumber || "-",
+        customer_state:   "Tamil Nadu (33)",
+        customer_pin:     customerPin,
+
+        items: items
+      };
+
+      renderInvoice(invoiceData);
+    } catch (err) {
+      console.error(err);
+      alert('Error loading customer report: ' + err.message);
+      renderInvoice(defaultInvoiceData);
+    }
+  } else if (supplierId) {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/suppliers/${supplierId}`, { headers });
+      if (!response.ok) throw new Error('Failed to fetch supplier details');
+      const supplier = await response.json();
+
+      // Retrieve date range filters if passed
+      const startDate = urlParams.get('startDate') || '';
+      const endDate = urlParams.get('endDate') || '';
+      let dateRangeStr = 'All Time';
+      if (startDate || endDate) {
+        dateRangeStr = `${startDate || 'Start'} to ${endDate || 'End'}`;
+      }
+
+      // Filter supplier purchases by dates
+      const filteredPurchases = (supplier.purchases || []).filter(p => {
+        const dateStr = p.purchaseDate?.split('T')[0];
+        if (startDate && dateStr < startDate) return false;
+        if (endDate && dateStr > endDate) return false;
+        return true;
+      });
+
+      // Change label of invoice to "SUPPLIER LEDGER"
+      const taxInvoiceLabel = document.querySelector('.tax-invoice-label');
+      if (taxInvoiceLabel) taxInvoiceLabel.innerText = "SUPPLIER LEDGER";
+      
+      const subtitleLabel = document.querySelector('.invoice-subtitle');
+      if (subtitleLabel) subtitleLabel.innerText = "Purchase Transaction History";
+
+      const billToLabel = document.querySelector('.bill-to-card .card-heading');
+      if (billToLabel) billToLabel.innerText = "Supplier Details";
+
+      // Parse supplier address for city and pin code
+      let supplierAddress = supplier.address || "-";
+      let supplierCity = "-";
+      let supplierPin = "-";
+      
+      const pinMatch = supplierAddress.match(/\b\d{6}\b/);
+      if (pinMatch) {
+        supplierPin = pinMatch[0];
+        supplierAddress = supplierAddress.replace(pinMatch[0], "").trim();
+      }
+      supplierAddress = supplierAddress.replace(/,?\s*$/, "").trim(); // Clean trailing commas
+      
+      const addressParts = supplierAddress.split(/,\s*/);
+      if (addressParts.length > 1) {
+        supplierCity = addressParts[addressParts.length - 1];
+      }
+
+      const totalQty = filteredPurchases.reduce((acc, p) => acc + (p.items?.[0]?.quantity || 0), 0);
+
+      // Prepare items list for table: S.No, Date, Doc No., Variety, Bags, Rate, Total Amount
+      const items = filteredPurchases.map(p => ({
+        date: new Date(p.purchaseDate).toLocaleDateString('en-GB'),
+        docNo: p.entryNo,
+        varietyName: p.items?.[0]?.variety?.name || "-",
+        quantity: p.items?.[0]?.quantity || 0,
+        rate: p.items?.[0]?.rate || 0,
+        total: p.totalAmount
+      }));
+
+      // Map to renderInvoice structure
+      const invoiceData = {
+        company_logo:    "logo.png",
+        company_name:    "MB BHARATH RICE MUNDY",
+        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_phone:   "+91 99942 80252, +91 95976 90100",
+        company_email:   "-",
+        company_gstin:   "-",
+        company_pan:     "-",
+        company_website: "-",
+
+        is_report: true,
+        report_type: 'supplier',
+
+        invoice_number:  `SUPP-REP-${supplier.id.substring(0, 5).toUpperCase()}`,
+        invoice_date:    new Date().toLocaleDateString('en-GB'),
+        due_date:        dateRangeStr,
+        vehicle_number:  `${totalQty.toLocaleString()} Bags`,
+        payment_mode:    `${filteredPurchases.length} Transactions`,
+        invoice_status:  "GENERATED",
+
+        // Supplier details
+        customer_name:    supplier.name,
+        customer_mobile:  supplier.phone || "-",
+        customer_address: supplierAddress,
+        customer_city:    supplierCity,
+        customer_gstin:   supplier.gstNumber || "-",
+        customer_state:   "Tamil Nadu (33)",
+        customer_pin:     supplierPin,
+
+        items: items
+      };
+
+      renderInvoice(invoiceData);
+    } catch (err) {
+      console.error(err);
+      alert('Error loading supplier report: ' + err.message);
+      renderInvoice(defaultInvoiceData);
+    }
+  } else if (reportType) {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Hide the bill-to-card and billing-supply-grid completely since this is a general list
+      const billingSupplyGrid = document.querySelector('.billing-supply-grid');
+      if (billingSupplyGrid) {
+        billingSupplyGrid.style.display = 'none';
+      }
+
+      // Retrieve date range filters if passed
+      const startDate = urlParams.get('startDate') || '';
+      const endDate = urlParams.get('endDate') || '';
+      let dateRangeStr = 'All Time';
+      if (startDate || endDate) {
+        dateRangeStr = `${startDate || 'Start'} to ${endDate || 'End'}`;
+      }
+
+      let items = [];
+      let totalQty = 0;
+      let totalValue = 0;
+      let reportName = "";
+      let subtitle = "";
+
+      if (reportType === 'inventory') {
+        const response = await fetch(`${API_URL}/stock`, { headers });
+        if (!response.ok) throw new Error('Failed to fetch stock inventory');
+        const stock = await response.json();
+
+        reportName = "INVENTORY LEDGER";
+        subtitle = "Current Stock Levels and Valuation";
+        totalQty = stock.reduce((sum, item) => sum + item.quantity, 0);
+        totalValue = stock.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+
+        items = stock.map(item => ({
+          varietyName: item.varietyName,
+          quantity: item.quantity,
+          rate: item.price,
+          total: item.quantity * item.price
+        }));
+      } else if (reportType === 'sales') {
+        const response = await fetch(`${API_URL}/sales?limit=100`, { headers });
+        if (!response.ok) throw new Error('Failed to fetch sales records');
+        const salesRes = await response.json();
+        const sales = salesRes.data || [];
+
+        reportName = "SALES REPORT";
+        subtitle = "General Sales Transaction Ledger";
+
+        // Filter by date range
+        const filteredSales = sales.filter(s => {
+          const dateStr = s.saleDate?.split('T')[0];
+          if (startDate && dateStr < startDate) return false;
+          if (endDate && dateStr > endDate) return false;
+          return true;
+        });
+
+        totalQty = filteredSales.reduce((sum, s) => sum + (s.items?.[0]?.quantity || 0), 0);
+        totalValue = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
+
+        items = filteredSales.map(s => ({
+          date: new Date(s.saleDate).toLocaleDateString('en-GB'),
+          docNo: s.invoiceNo,
+          name: s.customer?.name || "-",
+          quantity: s.items?.[0]?.quantity || 0,
+          total: s.totalAmount
+        }));
+      } else if (reportType === 'purchases') {
+        const response = await fetch(`${API_URL}/purchases?limit=100`, { headers });
+        if (!response.ok) throw new Error('Failed to fetch purchase records');
+        const purchasesRes = await response.json();
+        const purchases = purchasesRes.data || [];
+
+        reportName = "PURCHASE LEDGER";
+        subtitle = "General Grain Purchases Transaction Ledger";
+
+        // Filter by date range
+        const filteredPurchases = purchases.filter(p => {
+          const dateStr = p.purchaseDate?.split('T')[0];
+          if (startDate && dateStr < startDate) return false;
+          if (endDate && dateStr > endDate) return false;
+          return true;
+        });
+
+        totalQty = filteredPurchases.reduce((sum, p) => sum + (p.items?.[0]?.quantity || 0), 0);
+        totalValue = filteredPurchases.reduce((sum, p) => sum + p.totalAmount, 0);
+
+        items = filteredPurchases.map(p => ({
+          date: new Date(p.purchaseDate).toLocaleDateString('en-GB'),
+          docNo: p.entryNo,
+          name: p.supplier?.name || "-",
+          quantity: p.items?.[0]?.quantity || 0,
+          total: p.totalAmount
+        }));
+      }
+
+      // Change label of invoice
+      const taxInvoiceLabel = document.querySelector('.tax-invoice-label');
+      if (taxInvoiceLabel) taxInvoiceLabel.innerText = reportName;
+      
+      const subtitleLabel = document.querySelector('.invoice-subtitle');
+      if (subtitleLabel) subtitleLabel.innerText = subtitle;
+
+      // Map to renderInvoice structure
+      const invoiceData = {
+        company_logo:    "logo.png",
+        company_name:    "MB BHARATH RICE MUNDY",
+        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_phone:   "+91 99942 80252, +91 95976 90100",
+        company_email:   "-",
+        company_gstin:   "-",
+        company_pan:     "-",
+        company_website: "-",
+
+        is_report: true,
+        report_type: reportType,
+
+        invoice_number:  `${reportType.toUpperCase()}-REP`,
+        invoice_date:    new Date().toLocaleDateString('en-GB'),
+        due_date:        dateRangeStr,
+        vehicle_number:  reportType === 'inventory' ? `${totalQty.toLocaleString()} kg` : `${totalQty.toLocaleString()} Bags`,
+        payment_mode:    `${items.length} Entries`,
+        invoice_status:  "GENERATED",
+
+        items: items
+      };
+
+      renderInvoice(invoiceData);
+    } catch (err) {
+      console.error(err);
+      alert('Error loading report: ' + err.message);
       renderInvoice(defaultInvoiceData);
     }
   } else {

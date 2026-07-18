@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input"
 import { useSuppliers, useSupplierDetails } from "@/data/useSuppliers"
 import { useAuth } from "@/contexts/AuthContext"
 import { Truck, Phone, MapPin, Plus, Loader2, Download } from "lucide-react"
-import { generatePDFReport } from "@/lib/pdfReport"
 
 export function Suppliers() {
   const { suppliers, isLoading, addSupplier, deleteSupplier, updateSupplier } = useSuppliers(1, 100)
@@ -68,25 +67,8 @@ export function Suppliers() {
   }
 
   const handleDownloadPDF = () => {
-    if (!supplierDetails || !supplierDetails.purchases?.length) return
-    const data = supplierDetails.purchases.map((p: any) => ({
-      ...p,
-      supplier: { name: supplierDetails.name }
-    }))
-    const totalQty = supplierDetails.purchases.reduce((acc: number, p: any) => acc + (p.items?.[0]?.quantity || 0), 0)
-    const totalAmount = supplierDetails.purchases.reduce((acc: number, p: any) => acc + p.totalAmount, 0)
-
-    generatePDFReport({
-      title: `${supplierDetails.name} - Purchase History`,
-      type: 'Purchases',
-      dateRange: 'All Time',
-      data,
-      summary: {
-        totalRecords: supplierDetails.purchases.length,
-        totalQuantity: totalQty,
-        totalAmount
-      }
-    })
+    if (!supplierDetails) return
+    window.open(`/invoice.html?supplierId=${supplierDetails.id}`, '_blank')
   }
 
   if (selectedSupplier) {

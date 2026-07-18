@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/Input"
 import { useCustomers, useCustomerDetails } from "@/data/useCustomers"
 import { useAuth } from "@/contexts/AuthContext"
 import { User, Phone, MapPin, Plus, Loader2, ArrowLeft, Calendar, Download, ChevronLeft, ChevronRight } from "lucide-react"
-import { generatePDFReport } from "@/lib/pdfReport"
 
 // ── CUSTOMER DETAIL DRAWER ───────────────────────────────────────────────────
 function CustomerDetailDrawer({ customerId, onClose, onEdit, onDelete, onViewHistory }: {
@@ -151,25 +150,8 @@ function SalesHistoryModal({ customerId, onClose }: {
   }, [filteredSales, currentPage])
 
   const handleDownload = () => {
-    if (!customer || !filteredSales.length) return
-    const data = filteredSales.map((s: any) => ({
-      ...s,
-      customer: { name: customer.name }
-    }))
-    const totalQty = filteredSales.reduce((acc: number, s: any) => acc + (s.items?.[0]?.quantity || 0), 0)
-    const totalAmount = filteredSales.reduce((acc: number, s: any) => acc + s.totalAmount, 0)
-
-    generatePDFReport({
-      title: `${customer.name} - Sales History`,
-      type: 'Sales',
-      dateRange: startDate || endDate ? `${startDate || 'Start'} to ${endDate || 'End'}` : 'All Time',
-      data,
-      summary: {
-        totalRecords: filteredSales.length,
-        totalQuantity: totalQty,
-        totalAmount
-      }
-    })
+    if (!customer) return
+    window.open(`/invoice.html?customerId=${customer.id}&startDate=${startDate}&endDate=${endDate}`, '_blank')
   }
 
   if (!customerId) return null

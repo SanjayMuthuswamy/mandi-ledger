@@ -5,7 +5,6 @@ import { useStock } from "@/data/useStock"
 import { useSales } from "@/data/useSales"
 import { usePurchases } from "@/data/usePurchases"
 import { useDashboard } from "@/data/useDashboard"
-import { generatePDFReport } from "@/lib/pdfReport"
 import { Package, ShoppingCart, Wheat, Loader2, Download, Printer, Calendar } from "lucide-react"
 
 export function Reports() {
@@ -26,40 +25,7 @@ export function Reports() {
   const netProfit = totalRevenue - totalPurchases
 
   const handleExportPDF = () => {
-    if (activeReport === 'inventory') {
-      generatePDFReport({
-        title: 'Stock Inventory Report',
-        type: 'Inventory',
-        data: stock,
-        summary: {
-          totalRecords: stock.length,
-          totalQuantity: stock.reduce((s, i) => s + i.quantity, 0),
-          totalAmount: stockValue
-        }
-      })
-    } else if (activeReport === 'sales') {
-      generatePDFReport({
-        title: 'Sales Report',
-        type: 'Sales',
-        data: sales,
-        summary: {
-          totalRecords: sales.length,
-          totalQuantity: sales.reduce((s, i) => s + (i.items[0]?.quantity || 0), 0),
-          totalAmount: sales.reduce((s, i) => s + i.totalAmount, 0)
-        }
-      })
-    } else if (activeReport === 'purchases') {
-      generatePDFReport({
-        title: 'Purchase Report',
-        type: 'Purchases',
-        data: purchases,
-        summary: {
-          totalRecords: purchases.length,
-          totalQuantity: purchases.reduce((s, i) => s + (i.items[0]?.quantity || 0), 0),
-          totalAmount: purchases.reduce((s, i) => s + i.totalAmount, 0)
-        }
-      })
-    }
+    window.open(`/invoice.html?reportType=${activeReport}`, '_blank')
   }
 
   return (
