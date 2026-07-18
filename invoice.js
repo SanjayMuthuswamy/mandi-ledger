@@ -69,7 +69,7 @@ const defaultInvoiceData = {
   reference_number: "",
 
   // Notes
-  terms_conditions: "Goods once sold will not be taken back.\nPayment due within 15 days of invoice date.\nSubject to Erode jurisdiction.",
+  terms_conditions: "Goods once sold will not be taken back.\nPayment due within 15 days of invoice date.",
   customer_notes:   "",
   remarks:          "",
 
@@ -549,8 +549,9 @@ function renderInvoice(data) {
     hideIfEmpty('ref-row',      data.reference_number);
 
     // ── Notes values ────────────────────────────────────────────────────────
-    setText('terms-conditions', data.terms_conditions);
-    hideIfEmpty('terms-block',  data.terms_conditions);
+    const terms = data.terms_conditions !== undefined ? data.terms_conditions : "Goods once sold will not be taken back.\nPayment due within 15 days of invoice date.";
+    setText('terms-conditions', terms);
+    hideIfEmpty('terms-block',  terms);
     setText('customer-notes',   data.customer_notes);
     hideIfEmpty('cust-notes-block', data.customer_notes);
     setText('remarks',          data.remarks);

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { StatusBadge } from "@/components/ui/DetailDrawer"
 import { useStock } from "@/data/useStock"
@@ -14,18 +14,52 @@ export function Reports() {
   const { summary, isLoading: isDashboardLoading } = useDashboard()
   
   const [activeReport, setActiveReport] = useState<'inventory' | 'sales' | 'purchases'>('inventory')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   const isLoading = isStockLoading || isSalesLoading || isPurchasesLoading || isDashboardLoading
 
+  const filteredSales = useMemo(() => {
+    return sales.filter(s => {
+      const dateStr = s.saleDate.split('T')[0]
+      if (startDate && dateStr < startDate) return false
+      if (endDate && dateStr > endDate) return false
+      return true
+    })
+  }, [sales, startDate, endDate])
 
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter(p => {
+      const dateStr = p.purchaseDate.split('T')[0]
+      if (startDate && dateStr < startDate) return false
+      if (endDate && dateStr > endDate) return false
+      return true
+    })
+  }, [purchases, startDate, endDate])
 
   const stockValue = stock.reduce((sum, item) => sum + (item.quantity * item.price), 0)
-  const totalRevenue = summary?.kpis?.totalSaleValue || 0
-  const totalPurchases = summary?.kpis?.totalPurchaseValue || 0
+  
+  const totalRevenue = useMemo(() => {
+    if (startDate || endDate) {
+      return filteredSales.reduce((sum, s) => sum + s.totalAmount, 0)
+    }
+    return summary?.kpis?.totalSaleValue || 0
+  }, [summary, filteredSales, startDate, endDate])
+
+  const totalPurchases = useMemo(() => {
+    if (startDate || endDate) {
+      return filteredPurchases.reduce((sum, p) => sum + p.totalAmount, 0)
+    }
+    return summary?.kpis?.totalPurchaseValue || 0
+  }, [summary, filteredPurchases, startDate, endDate])
+
   const netProfit = totalRevenue - totalPurchases
 
   const handleExportPDF = () => {
-    window.open(`/invoice.html?reportType=${activeReport}`, '_blank')
+    let url = `/invoice.html?reportType=${activeReport}`
+    if (startDate) url += `&startDate=${startDate}`
+    if (endDate) url += `&endDate=${endDate}`
+    window.open(url, '_blank')
   }
 
   return (
@@ -34,9 +68,42 @@ export function Reports() {
         <StampHeader title="Ledger Reports" />
         
         <div className="flex flex-wrap items-center gap-2 md:gap-3 bg-stone-light p-1.5 border border-brass/30 shadow-[2px_2px_0px_0px_rgba(140,111,62,0.2)] rounded-sm">
-          <div className="flex items-center gap-2 px-3 py-1.5 font-mono text-xs md:text-sm text-ink/80 border-r border-brass/20">
+          <div className="flex items-center gap-2 px-3 py-1 font-mono text-xs md:text-sm text-ink/80 border-r border-brass/20">
             <Calendar size={14} className="text-ink/50" />
-            <span>Today</span>
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+              className="bg-transparent border-0 outline-none text-ink text-xs focus:ring-0 cursor-pointer p-0 w-28 font-mono"
+            />
+            <span className="text-ink/40 text-xs">to</span>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+              className="bg-transparent border-0 outline-none text-ink text-xs focus:ring-0 cursor-pointer p-0 w-28 font-mono"
+            />
+            <button
+              onClick={() => {
+                const todayStr = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD local format
+                setStartDate(todayStr)
+                setEndDate(todayStr)
+              }}
+              className="px-2 py-0.5 bg-ink text-stone text-[10px] uppercase font-bold hover:bg-ink/80 rounded-sm font-sans"
+            >
+              Today
+            </button>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('')
+                  setEndDate('')
+                }}
+                className="px-2 py-0.5 bg-ledger-red text-stone text-[10px] uppercase font-bold hover:bg-ledger-red/80 rounded-sm font-sans"
+              >
+                Clear
+              </button>
+            )}
           </div>
           <button 
             onClick={handleExportPDF}
@@ -121,43 +188,55 @@ export function Reports() {
               </div>
             ))}
             
-            {activeReport === 'sales' && sales.map((item) => (
-              <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
-                <div className="flex justify-between items-start border-b border-brass/10 pb-2">
-                  <div>
-                    <div className="text-ink font-bold font-mono">{item.invoiceNo}</div>
-                    <div className="text-xs text-ink/70 font-mono mt-0.5">{item.saleDate.split('T')[0]}</div>
+            {activeReport === 'sales' && (
+              filteredSales.length === 0 ? (
+                <div className="p-8 text-center font-sans text-ink/70 border border-brass/30 bg-stone-light">No sales logged in this date range.</div>
+              ) : (
+                filteredSales.map((item) => (
+                  <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
+                    <div className="flex justify-between items-start border-b border-brass/10 pb-2">
+                      <div>
+                        <div className="text-ink font-bold font-mono">{item.invoiceNo}</div>
+                        <div className="text-xs text-ink/70 font-mono mt-0.5">{item.saleDate.split('T')[0]}</div>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <div className="font-mono text-lg font-bold text-ink">₹{item.totalAmount.toLocaleString()}</div>
+                        <StatusBadge status={item.paymentStatus} />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                      <div className="text-sm font-medium text-ink">{item.customer?.name}</div>
+                      <div className="text-sm text-ink/80">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</div>
+                    </div>
                   </div>
-                  <div className="text-right flex flex-col items-end gap-1">
-                    <div className="font-mono text-lg font-bold text-ink">₹{item.totalAmount.toLocaleString()}</div>
-                    <StatusBadge status={item.paymentStatus} />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <div className="text-sm font-medium text-ink">{item.customer?.name}</div>
-                  <div className="text-sm text-ink/80">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</div>
-                </div>
-              </div>
-            ))}
+                ))
+              )
+            )}
 
-            {activeReport === 'purchases' && purchases.map((item) => (
-              <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
-                <div className="flex justify-between items-start border-b border-brass/10 pb-2">
-                  <div>
-                    <div className="text-ink font-bold font-mono">{item.entryNo}</div>
-                    <div className="text-xs text-ink/70 font-mono mt-0.5">{item.purchaseDate.split('T')[0]}</div>
+            {activeReport === 'purchases' && (
+              filteredPurchases.length === 0 ? (
+                <div className="p-8 text-center font-sans text-ink/70 border border-brass/30 bg-stone-light">No purchases logged in this date range.</div>
+              ) : (
+                filteredPurchases.map((item) => (
+                  <div key={item.id} className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3">
+                    <div className="flex justify-between items-start border-b border-brass/10 pb-2">
+                      <div>
+                        <div className="text-ink font-bold font-mono">{item.entryNo}</div>
+                        <div className="text-xs text-ink/70 font-mono mt-0.5">{item.purchaseDate.split('T')[0]}</div>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <div className="font-mono text-lg font-bold text-ink">₹{item.totalAmount.toLocaleString()}</div>
+                        <StatusBadge status={item.paymentStatus} />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                      <div className="text-sm font-medium text-ink">{item.supplier?.name}</div>
+                      <div className="text-sm text-ink/80">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</div>
+                    </div>
                   </div>
-                  <div className="text-right flex flex-col items-end gap-1">
-                    <div className="font-mono text-lg font-bold text-ink">₹{item.totalAmount.toLocaleString()}</div>
-                    <StatusBadge status={item.paymentStatus} />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <div className="text-sm font-medium text-ink">{item.supplier?.name}</div>
-                  <div className="text-sm text-ink/80">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</div>
-                </div>
-              </div>
-            ))}
+                ))
+              )
+            )}
           </div>
 
           {/* Desktop Table View */}
@@ -215,33 +294,49 @@ export function Reports() {
                 </tr>
               ))}
 
-              {activeReport === 'sales' && sales.map((item) => (
-                <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
-                  <td className="p-4 text-ink font-bold">{item.invoiceNo}</td>
-                  <td className="p-4 text-ink/70">{item.saleDate.split('T')[0]}</td>
-                  <td className="p-4 font-sans text-ink">{item.customer?.name}</td>
-                  <td className="p-4 font-sans text-ink/80">{item.items[0]?.variety?.name}</td>
-                  <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
-                  <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
-                  <td className="p-4 text-center">
-                    <StatusBadge status={item.paymentStatus} />
-                  </td>
-                </tr>
-              ))}
+              {activeReport === 'sales' && (
+                filteredSales.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-ink/50 font-sans">No sales logged in this date range.</td>
+                  </tr>
+                ) : (
+                  filteredSales.map((item) => (
+                    <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
+                      <td className="p-4 text-ink font-bold">{item.invoiceNo}</td>
+                      <td className="p-4 text-ink/70">{item.saleDate.split('T')[0]}</td>
+                      <td className="p-4 font-sans text-ink">{item.customer?.name}</td>
+                      <td className="p-4 font-sans text-ink/80">{item.items[0]?.variety?.name}</td>
+                      <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
+                      <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
+                      <td className="p-4 text-center">
+                        <StatusBadge status={item.paymentStatus} />
+                      </td>
+                    </tr>
+                  ))
+                )
+              )}
 
-              {activeReport === 'purchases' && purchases.map((item) => (
-                <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
-                  <td className="p-4 text-ink font-bold">{item.entryNo}</td>
-                  <td className="p-4 text-ink/70">{item.purchaseDate.split('T')[0]}</td>
-                  <td className="p-4 font-sans text-ink">{item.supplier?.name}</td>
-                  <td className="p-4 font-sans text-ink/80">{item.items[0]?.variety?.name}</td>
-                  <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
-                  <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
-                  <td className="p-4 text-center">
-                    <StatusBadge status={item.paymentStatus} />
-                  </td>
-                </tr>
-              ))}
+              {activeReport === 'purchases' && (
+                filteredPurchases.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-ink/50 font-sans">No purchases logged in this date range.</td>
+                  </tr>
+                ) : (
+                  filteredPurchases.map((item) => (
+                    <tr key={item.id} className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono">
+                      <td className="p-4 text-ink font-bold">{item.entryNo}</td>
+                      <td className="p-4 text-ink/70">{item.purchaseDate.split('T')[0]}</td>
+                      <td className="p-4 font-sans text-ink">{item.supplier?.name}</td>
+                      <td className="p-4 font-sans text-ink/80">{item.items[0]?.variety?.name}</td>
+                      <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
+                      <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
+                      <td className="p-4 text-center">
+                        <StatusBadge status={item.paymentStatus} />
+                      </td>
+                    </tr>
+                  ))
+                )
+              )}
             </tbody>
           </table>
         </div>

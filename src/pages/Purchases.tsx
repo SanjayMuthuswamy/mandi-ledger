@@ -172,6 +172,8 @@ export function Purchases() {
   const [quantity, setQuantity] = useState('')
   const [kgPerBag, setKgPerBag] = useState('26')
   const [rate, setRate] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState('PENDING')
+  const [isRecording, setIsRecording] = useState(false)
  
   const [errorMsg, setErrorMsg] = useState('')
  
@@ -184,10 +186,11 @@ export function Purchases() {
  
     if (selectedVariety && selectedSupplier) {
       try {
+        setIsRecording(true)
         await addPurchase({
           supplierId: selectedSupplier,
           purchaseDate: new Date().toISOString(),
-          paymentStatus: 'PENDING',
+          paymentStatus: paymentStatus,
           items: [{
             riceVarietyId: selectedVariety,
             quantity: qtyBags,
@@ -200,6 +203,7 @@ export function Purchases() {
         setQuantity('')
         setRate('')
         setKgPerBag('26')
+        setPaymentStatus('PENDING')
       } catch (err: any) {
         let msg = err.data?.error || "Failed to record purchase. Please try again."
         if (err.data?.issues) {
@@ -209,6 +213,8 @@ export function Purchases() {
            msg += ` (${issuesStr})`
         }
         setErrorMsg(msg)
+      } finally {
+        setIsRecording(false)
       }
     }
   }
@@ -437,6 +443,21 @@ export function Purchases() {
             )}
           </div>
 
+          {/* Payment Details */}
+          <div className="space-y-2 border-t border-brass/10 pt-4">
+            <label className="font-medium text-sm">Payment Status</label>
+            <select
+              value={paymentStatus}
+              onChange={(e) => setPaymentStatus(e.target.value)}
+              className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+            >
+              <option value="PENDING">UNPAID</option>
+              <option value="PARTIAL">PARTIAL</option>
+              <option value="PAID">PAID</option>
+              <option value="OVERDUE">OVERDUE</option>
+            </select>
+          </div>
+
           {errorMsg && (
             <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm flex items-start gap-2 rounded-sm font-medium">
               <span className="mt-0.5">⚠</span> {errorMsg}
@@ -449,7 +470,16 @@ export function Purchases() {
           </div>
 
           <div className="pt-4 border-t border-brass/20">
-            <Button type="submit" className="w-full">Record Purchase</Button>
+            <Button type="submit" disabled={isRecording} className="w-full flex items-center justify-center gap-2">
+              {isRecording ? (
+                <>
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  <span>Recording...</span>
+                </>
+              ) : (
+                <span>Record Purchase</span>
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>

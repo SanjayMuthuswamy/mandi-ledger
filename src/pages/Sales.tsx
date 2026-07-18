@@ -252,6 +252,10 @@ export function Sales() {
   const [kgPerBag, setKgPerBag] = useState('26')
   const [rate, setRate] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState('PENDING')
+  const [amtPaid, setAmtPaid] = useState('0')
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
  
   const handleRecordSale = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -271,10 +275,14 @@ export function Sales() {
       }
  
       try {
+        setIsRecording(true)
+        const finalAmtPaid = paymentStatus === 'PAID' ? computedTotal : (paymentStatus === 'PARTIAL' ? Number(amtPaid) : 0)
         await addSale({
           customerId: selectedCustomer,
           saleDate: new Date().toISOString(),
-          paymentStatus: 'PENDING',
+          paymentStatus,
+          amountPaid: finalAmtPaid,
+          paymentMethod: paymentStatus === 'PARTIAL' ? paymentMethod : null,
           items: [{
             riceVarietyId: selectedVariety,
             quantity: qtyBags,
@@ -287,6 +295,9 @@ export function Sales() {
         setQuantity('')
         setRate('')
         setKgPerBag('26')
+        setPaymentStatus('PENDING')
+        setAmtPaid('0')
+        setPaymentMethod('')
       } catch (err: any) {
         let msg = err.data?.error || "Failed to record sale. Please try again."
         if (err.data?.issues) {
@@ -296,6 +307,8 @@ export function Sales() {
            msg += ` (${issuesStr})`
         }
         setErrorMsg(msg)
+      } finally {
+        setIsRecording(false)
       }
     }
   }
@@ -317,6 +330,12 @@ export function Sales() {
   [varieties, selectedVariety])
   
   const computedTotal = (Number(quantity) || 0) * (Number(rate) || 0)
+
+  useEffect(() => {
+    if (paymentStatus === 'PAID') {
+      setAmtPaid(computedTotal.toString())
+    }
+  }, [computedTotal, paymentStatus])
 
   return (
     <div className="flex flex-col gap-8 pb-12">
@@ -526,6 +545,87 @@ export function Sales() {
             )}
           </div>
 
+           {/* Payment Details */}
+          <div className="space-y-4 border-t border-brass/10 pt-4">
+            <div className={paymentStatus === 'PARTIAL' ? "grid grid-cols-2 gap-3" : "w-full"}>
+              <div className="space-y-2">
+                <label className="font-medium text-sm">Payment Status</label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e) => {
+                    const newStatus = e.target.value
+                    setPaymentStatus(newStatus)
+                    if (newStatus === 'PAID') {
+                      setAmtPaid(computedTotal.toString())
+                    } else if (newStatus === 'PENDING' || newStatus === 'OVERDUE') {
+                      setAmtPaid('0')
+                      setPaymentMethod('')
+                    }
+                  }}
+                  className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+                >
+                  <option value="PENDING">UNPAID</option>
+                  <option value="PARTIAL">PARTIAL</option>
+                  <option value="PAID">PAID</option>
+                  <option value="OVERDUE">OVERDUE</option>
+                </select>
+              </div>
+
+              {paymentStatus === 'PARTIAL' && (
+                <div className="space-y-2">
+                  <label className="font-medium text-sm">Payment Method</label>
+                  <input
+                    type="text"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    placeholder="Cash, UPI, NEFT"
+                    className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+                  />
+                </div>
+              )}
+            </div>
+
+            {paymentStatus === 'PARTIAL' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="font-medium text-sm">Amount Paid (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={computedTotal}
+                    step="0.01"
+                    value={amtPaid}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 0
+                      setAmtPaid(e.target.value)
+                      if (val >= computedTotal) {
+                        setPaymentStatus('PAID')
+                      } else if (val > 0 && val < computedTotal) {
+                        setPaymentStatus('PARTIAL')
+                      } else if (val === 0) {
+                        setPaymentStatus('PENDING')
+                      }
+                    }}
+                    className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <span className="font-medium text-sm block">Remaining Balance</span>
+                  <div className="h-10 flex items-center px-1 font-mono text-sm font-bold">
+                    {(() => {
+                      const paid = Number(amtPaid) || 0
+                      const remaining = computedTotal - paid
+                      if (remaining <= 0) {
+                        return <span className="text-paddy">₹0 (Settle)</span>
+                      }
+                      return <span className="text-ledger-red">₹{remaining.toLocaleString()}</span>
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {errorMsg && (
             <div className="bg-ledger-red/10 border border-ledger-red/30 p-3 text-ledger-red text-sm flex items-start gap-2 rounded-sm font-medium">
               <span className="mt-0.5">⚠</span> {errorMsg}
@@ -538,7 +638,16 @@ export function Sales() {
           </div>
 
           <div className="pt-4 border-t border-brass/20">
-            <Button type="submit" className="w-full">Record Sale</Button>
+            <Button type="submit" disabled={isRecording} className="w-full flex items-center justify-center gap-2">
+              {isRecording ? (
+                <>
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  <span>Recording...</span>
+                </>
+              ) : (
+                <span>Record Sale</span>
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
