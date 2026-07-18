@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
-import { DetailDrawer, DetailRow, StatusBadge, DrawerSection } from "@/components/ui/DetailDrawer"
+import { DetailDrawer, DetailRow, StatusBadge, DrawerSection, DrawerActionBar } from "@/components/ui/DetailDrawer"
 import { Input } from "@/components/ui/Input"
 import { useVarieties } from "@/data/useVarieties"
 import { usePurchases, usePurchaseDetails } from "@/data/usePurchases"
@@ -42,6 +42,14 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
       onClose={onClose}
       title={purchase?.entryNo || "Purchase Details"}
       subtitle={purchase ? `${purchase.purchaseDate?.split('T')[0]} · ${purchase.supplier?.name}` : undefined}
+      actions={
+        <DrawerActionBar 
+          onDownload={() => {
+            if (!purchase) return
+            window.open(`/invoice.html?purchaseId=${purchase.id}`, '_blank')
+          }}
+        />
+      }
     >
       {isLoading ? (
         <div className="flex justify-center p-16">

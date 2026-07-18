@@ -380,6 +380,7 @@ function renderInvoice(data) {
 window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const saleId = urlParams.get('saleId');
+  const purchaseId = urlParams.get('purchaseId');
 
   if (saleId) {
     try {
@@ -486,6 +487,123 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.error(err);
       alert('Error loading invoice: ' + err.message);
+      renderInvoice(defaultInvoiceData);
+    }
+  } else if (purchaseId) {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const token = localStorage.getItem('accessToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Fetch requesting user details in parallel
+      let requestingUser = null;
+      try {
+        const meResponse = await fetch(`${API_URL}/auth/me`, { headers });
+        if (meResponse.ok) {
+          requestingUser = await meResponse.json();
+        }
+      } catch (e) {
+        console.error("Failed to fetch requesting user details", e);
+      }
+
+      const response = await fetch(`${API_URL}/purchases/${purchaseId}`, { headers });
+      if (!response.ok) {
+        throw new Error('Failed to fetch purchase details');
+      }
+      const purchase = await response.json();
+
+      // Change label of invoice to "PURCHASE RECORD"
+      const taxInvoiceLabel = document.querySelector('.tax-invoice-label');
+      if (taxInvoiceLabel) {
+        taxInvoiceLabel.innerText = "PURCHASE RECORD";
+      }
+      
+      const billToLabel = document.querySelector('.bill-to-card .card-heading');
+      if (billToLabel) {
+        billToLabel.innerText = "Supplier Details";
+      }
+
+      // Parse supplier address for city and pin code
+      let supplierAddress = purchase.supplier?.address || "-";
+      let supplierCity = "-";
+      let supplierPin = "-";
+      
+      const pinMatch = supplierAddress.match(/\b\d{6}\b/);
+      if (pinMatch) {
+        supplierPin = pinMatch[0];
+        supplierAddress = supplierAddress.replace(pinMatch[0], "").trim();
+      }
+      supplierAddress = supplierAddress.replace(/,?\s*$/, "").trim(); // Clean trailing commas
+      
+      const addressParts = supplierAddress.split(/,\s*/);
+      if (addressParts.length > 1) {
+        supplierCity = addressParts[addressParts.length - 1];
+      }
+
+      // Map purchase fields to defaultInvoiceData shape
+      const invoiceData = {
+        company_logo:    "logo.png",
+        company_name:    "MB BHARATH RICE MUNDY",
+        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_phone:   "+91 99942 80252, +91 95976 90100",
+        company_email:   "-",
+        company_gstin:   "-",
+        company_pan:     "-",
+        company_website: "-",
+
+        // Metadata
+        invoice_number:  purchase.entryNo,
+        invoice_date:    new Date(purchase.purchaseDate).toLocaleDateString('en-GB'),
+        due_date:        new Date(purchase.purchaseDate).toLocaleDateString('en-GB'),
+        vehicle_number:  "-",
+        payment_mode:    "-",
+        invoice_status:  purchase.paymentStatus,
+        po_number:       "-",
+
+        // Supplier (in place of Customer)
+        customer_name:    purchase.supplier?.name,
+        customer_mobile:  purchase.supplier?.phone || "-",
+        customer_address: supplierAddress,
+        customer_city:    supplierCity,
+        customer_gstin:   purchase.supplier?.gstNumber || "-",
+        customer_state:   "Tamil Nadu (33)",
+        customer_pin:     supplierPin,
+
+        // Supply details
+        place_of_supply:  "Tamil Nadu (33)",
+        reverse_charge:   "No",
+        transport_name:   "-",
+        delivery_note:    "-",
+
+        // Items
+        items: (purchase.items || []).map(item => ({
+          name: item.variety?.name,
+          description: `${item.quantity} Bags (${item.kgPerBag || 26} kg/bag)`,
+          hsn: "1006",
+          quantity: item.quantity,
+          unit: "Bags",
+          rate: item.rate,
+          discount: 0,
+          gst_percent: 0, // Purchases do not list sales GST in our entry
+        })),
+
+        // Bank details
+        bank_name: "-",
+        account_number: "-",
+        ifsc: "-",
+        upi_id: "-",
+        
+        // Requesting user details
+        requested_by: requestingUser ? `${requestingUser.firstName} ${requestingUser.lastName} (${requestingUser.role?.name || 'User'})` : null,
+      };
+
+      renderInvoice(invoiceData);
+    } catch (err) {
+      console.error(err);
+      alert('Error loading purchase record: ' + err.message);
       renderInvoice(defaultInvoiceData);
     }
   } else {

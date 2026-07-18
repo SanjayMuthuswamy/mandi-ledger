@@ -709,6 +709,7 @@ body {
   body {
     background: var(--white);
     margin: 0;
+    padding-top: 0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -738,6 +739,10 @@ body {
   .signature-section {
     page-break-inside: avoid;
   }
+
+  .invoice-toolbar {
+    display: none !important;
+  }
 }
 
 /* ═══════════════════════ HIDDEN ELEMENTS ════════════════════════ */
@@ -745,3 +750,81 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* ── Floating Utility Header ── */
+.invoice-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.toolbar-brand {
+  font-family: 'Inter', sans-serif;
+  color: #F3F4F6;
+  font-size: 13pt;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.toolbar-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5pt;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #D1D5DB;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary {
+  background: #10B981; /* Premium Emerald green */
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-primary:hover {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Adjust wrapper layout for body on screen */
+@media screen {
+  body {
+    padding-top: 80px; /* Space for fixed header */
+  }
+}
+
