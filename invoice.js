@@ -222,11 +222,19 @@ function renderInvoice(data) {
   setText('payment-mode',    data.payment_mode);
 
   // Invoice Status badge
-  const statusBadge = document.getElementById('invoice-status');
-  if (statusBadge) {
-    const s = data.invoice_status || data.paymentStatus || 'PENDING';
-    statusBadge.innerText = s === 'PENDING' ? 'UNPAID' : s;
-    statusBadge.className = 'status-badge status-' + s;
+  const statusRow = document.getElementById('status-row');
+  if (statusRow) {
+    if (data.is_report) {
+      statusRow.classList.add('hidden');
+    } else {
+      statusRow.classList.remove('hidden');
+      const statusBadge = document.getElementById('invoice-status');
+      if (statusBadge) {
+        const s = data.invoice_status || data.paymentStatus || 'PENDING';
+        statusBadge.innerText = s === 'PENDING' ? 'UNPAID' : s;
+        statusBadge.className = 'status-badge status-' + s;
+      }
+    }
   }
 
   // ── Customer/Supplier Billing ─────────────────────────────────────────────
@@ -1157,5 +1165,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } else {
     renderInvoice(defaultInvoiceData);
+  }
+
+  // Set up download PDF action
+  const downloadBtn = document.getElementById('download-btn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      const element = document.querySelector('.invoice-document');
+      const docNo = document.getElementById('invoice-number')?.innerText || 'document';
+      const companyName = 'MB-BHARATH-RICE-MANDI';
+      const opt = {
+        margin:       0,
+        filename:     `${companyName}-${docNo}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    });
   }
 });

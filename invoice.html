@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="invoice.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <!-- Floating Action Bar -->
@@ -15,7 +16,8 @@
     <div class="toolbar-brand">MB BHARATH RICE MANDI</div>
     <div class="toolbar-actions">
       <button class="toolbar-btn btn-secondary" onclick="window.close()">Close</button>
-      <button class="toolbar-btn btn-primary" onclick="window.print()">Print / Save PDF</button>
+      <button class="toolbar-btn btn-secondary" onclick="window.print()">Print</button>
+      <button class="toolbar-btn btn-primary" id="download-btn">Download PDF</button>
     </div>
   </div>
 
@@ -72,7 +74,7 @@
               <th>Payment Mode</th>
               <td id="payment-mode"></td>
             </tr>
-            <tr>
+            <tr id="status-row">
               <th>Status</th>
               <td><span id="invoice-status" class="status-badge"></span></td>
             </tr>
