@@ -362,6 +362,18 @@ function renderInvoice(data) {
   // ── Signature ─────────────────────────────────────────────────────────────
   setText('authorized-signatory',  data.authorized_signatory);
   setText('signatory-company-name', data.company_name);
+
+  // ── Requested By ──────────────────────────────────────────────────────────
+  const reqContainer = document.getElementById('requested-by-container');
+  const reqUserEl = document.getElementById('requested-by-user');
+  if (reqContainer && reqUserEl) {
+    if (data.requested_by) {
+      reqUserEl.innerText = data.requested_by;
+      reqContainer.style.display = 'inline';
+    } else {
+      reqContainer.style.display = 'none';
+    }
+  }
 }
 
 // ── Auto-render on page load ─────────────────────────────────────────────────
@@ -377,11 +389,40 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+
+      // Fetch requesting user details in parallel
+      let requestingUser = null;
+      try {
+        const meResponse = await fetch(`${API_URL}/auth/me`, { headers });
+        if (meResponse.ok) {
+          requestingUser = await meResponse.json();
+        }
+      } catch (e) {
+        console.error("Failed to fetch requesting user details", e);
+      }
+
       const response = await fetch(`${API_URL}/sales/${saleId}`, { headers });
       if (!response.ok) {
         throw new Error('Failed to fetch sale details');
       }
       const sale = await response.json();
+      
+      // Parse customer address for city and pin code
+      let customerAddress = sale.customer?.address || "—";
+      let customerCity = "—";
+      let customerPin = "—";
+      
+      const pinMatch = customerAddress.match(/\b\d{6}\b/);
+      if (pinMatch) {
+        customerPin = pinMatch[0];
+        customerAddress = customerAddress.replace(pinMatch[0], "").trim();
+      }
+      customerAddress = customerAddress.replace(/,?\s*$/, "").trim(); // Clean trailing commas
+      
+      const addressParts = customerAddress.split(/,\s*/);
+      if (addressParts.length > 1) {
+        customerCity = addressParts[addressParts.length - 1];
+      }
       
       // Map sale fields to defaultInvoiceData shape
       const invoiceData = {
@@ -406,11 +447,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Customer
         customer_name:    sale.customer?.name,
         customer_mobile:  sale.customer?.phone || "—",
-        customer_address: sale.customer?.address || "—",
-        customer_city:    "—",
+        customer_address: customerAddress,
+        customer_city:    customerCity,
         customer_gstin:   sale.customer?.gstNumber || "—",
         customer_state:   "Tamil Nadu (33)",
-        customer_pin:     "—",
+        customer_pin:     customerPin,
 
         // Supply details
         place_of_supply:  "Tamil Nadu (33)",
@@ -427,7 +468,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           unit: "Bags",
           rate: item.rate,
           discount: 0,
-          gst_percent: 0,
+          gst_percent: 5,
         })),
 
         // Bank details
@@ -435,7 +476,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         account_number: "50200012345678",
         ifsc: "HDFC0001234",
         upi_id: "krgmills@hdfcbank",
-        authorized_signatory: "For KRG Modern Rice Mills",
+        authorized_signatory: requestingUser ? `${requestingUser.firstName} ${requestingUser.lastName}` : "Ravichandran",
+        
+        // Requesting user details
+        requested_by: requestingUser ? `${requestingUser.firstName} ${requestingUser.lastName} (${requestingUser.role?.name || 'User'})` : null,
       };
 
       renderInvoice(invoiceData);
