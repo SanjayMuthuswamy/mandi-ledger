@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../lib/prisma.js'
+import { z } from 'zod'
 import {
   CreateSaleSchema,
   UpdateSaleStatusSchema,
@@ -124,10 +125,21 @@ export async function createSale(req: Request, res: Response) {
             total: item.quantity * item.rate,
           })),
         },
+        ...(finalAmountPaid > 0 ? {
+          payments: {
+            create: {
+              amount: finalAmountPaid,
+              paymentMethod: body.paymentMethod || 'CASH',
+              paymentDate: new Date(body.saleDate),
+              notes: 'Initial payment logged during sale creation'
+            }
+          }
+        } : {})
       },
       include: {
         customer: true,
         items: { include: { variety: true } },
+        payments: true,
       },
     })
   })
@@ -142,6 +154,7 @@ export async function getSale(req: Request, res: Response) {
     include: {
       customer: true,
       items: { include: { variety: true } },
+      payments: { orderBy: { paymentDate: 'asc' } },
     },
   })
   res.json(sale)
@@ -356,5 +369,97 @@ export async function updateSale(req: Request, res: Response) {
   } catch (err: any) {
     res.status(err.statusCode || 500).json({ error: err.message || 'Failed to update sale.' })
   }
+}
+
+// ── POST /api/sales/:id/payments ─────────────────────────────────────────────
+export async function addSalePayment(req: Request, res: Response) {
+  const saleId = String(req.params.id)
+  const { amount, paymentMethod, paymentDate, notes } = z.object({
+    amount: z.number().positive(),
+    paymentMethod: z.string().min(1),
+    paymentDate: z.string().datetime().or(z.string().date()).optional(),
+    notes: z.string().optional().nullable(),
+  }).parse(req.body)
+
+  const result = await prisma.$transaction(async (tx) => {
+    const sale = await tx.sale.findUniqueOrThrow({
+      where: { id: saleId }
+    })
+
+    const newAmountPaid = sale.amountPaid + amount
+    let newStatus = sale.paymentStatus
+    if (newAmountPaid >= sale.totalAmount) {
+      newStatus = 'PAID'
+    } else if (newAmountPaid > 0) {
+      newStatus = 'PARTIAL'
+    }
+
+    // 1. Create payment record
+    const payment = await tx.payment.create({
+      data: {
+        saleId,
+        amount,
+        paymentMethod,
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        notes
+      }
+    })
+
+    // 2. Update sale
+    await tx.sale.update({
+      where: { id: saleId },
+      data: {
+        amountPaid: newAmountPaid,
+        paymentStatus: newStatus,
+        paymentMethod: paymentMethod
+      }
+    })
+
+    return payment
+  })
+
+  res.status(201).json(result)
+}
+
+// ── DELETE /api/sales/:id/payments/:paymentId ─────────────────────────────────
+export async function deleteSalePayment(req: Request, res: Response) {
+  const saleId = String(req.params.id)
+  const paymentId = String(req.params.paymentId)
+
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUniqueOrThrow({
+      where: { id: paymentId }
+    })
+
+    const sale = await tx.sale.findUniqueOrThrow({
+      where: { id: saleId }
+    })
+
+    const newAmountPaid = Math.max(0, sale.amountPaid - payment.amount)
+    let newStatus = sale.paymentStatus
+    if (newAmountPaid >= sale.totalAmount) {
+      newStatus = 'PAID'
+    } else if (newAmountPaid > 0) {
+      newStatus = 'PARTIAL'
+    } else {
+      newStatus = 'PENDING'
+    }
+
+    // 1. Delete payment record
+    await tx.payment.delete({
+      where: { id: paymentId }
+    })
+
+    // 2. Update sale
+    await tx.sale.update({
+      where: { id: saleId },
+      data: {
+        amountPaid: newAmountPaid,
+        paymentStatus: newStatus
+      }
+    })
+  })
+
+  res.status(204).send()
 }
 

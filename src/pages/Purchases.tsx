@@ -8,41 +8,63 @@ import { useVarieties } from "@/data/useVarieties"
 import { usePurchases, usePurchaseDetails } from "@/data/usePurchases"
 import { useSuppliers } from "@/data/useSuppliers"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus, Wheat, Loader2, Eye, Calendar } from "lucide-react"
+import { Plus, Wheat, Loader2, Eye, Calendar, Trash2 } from "lucide-react"
 
 function PurchaseDetailDrawer({ purchaseId, onClose, onEdit }: { purchaseId: string | null; onClose: () => void; onEdit: (purchase: any) => void }) {
   const { purchase, isLoading } = usePurchaseDetails(purchaseId)
-  const { updateStatus } = usePurchases()
+  const { addPayment, deletePayment } = usePurchases()
   const { user } = useAuth()
-  const [status, setStatus] = useState('')
-  const [amtPaid, setAmtPaid] = useState('')
-  const [method, setMethod] = useState('')
-  const [isUpdating, setIsUpdating] = useState(false)
+
+  const [recordAmount, setRecordAmount] = useState('')
+  const [recordMethod, setRecordMethod] = useState('CASH')
+  const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0])
+  const [recordNotes, setRecordNotes] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
+
+  const balance = purchase ? (purchase.totalAmount - (purchase.amountPaid ?? 0)) : 0
 
   useEffect(() => {
     if (purchase) {
-      setStatus(purchase.paymentStatus)
-      setAmtPaid(purchase.amountPaid?.toString() || '0')
-      setMethod(purchase.paymentMethod || '')
+      setRecordAmount(Math.max(0, purchase.totalAmount - (purchase.amountPaid ?? 0)).toFixed(2))
+      setRecordDate(new Date().toISOString().split('T')[0])
     }
   }, [purchase])
 
-  const handleUpdatePayment = async (e: React.FormEvent) => {
+  const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!purchase) return
-    setIsUpdating(true)
+    const amt = Number(recordAmount) || 0
+    if (amt <= 0) {
+      alert("Please enter a valid payment amount.")
+      return
+    }
+    setIsRecording(true)
     try {
-      const paidVal = Number(amtPaid) || 0
-      await updateStatus(purchase.id, status, paidVal, method)
-      alert("Payment details updated successfully.")
+      await addPayment(purchase.id, {
+        amount: amt,
+        paymentMethod: recordMethod,
+        paymentDate: recordDate,
+        notes: recordNotes || null
+      })
+      alert("Payment installment recorded successfully.")
+      setRecordNotes('')
     } catch (err: any) {
-      alert(err.data?.error || "Failed to update payment details.")
+      alert(err.data?.error || "Failed to record payment.")
     } finally {
-      setIsUpdating(false)
+      setIsRecording(false)
     }
   }
 
-  const balance = purchase ? (purchase.totalAmount - (purchase.amountPaid ?? 0)) : 0
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!purchase) return
+    if (!confirm("Are you sure you want to delete this payment installment? This will revert the paid balance.")) return
+    try {
+      await deletePayment(purchase.id, paymentId)
+      alert("Payment installment deleted successfully.")
+    } catch (err: any) {
+      alert(err.data?.error || "Failed to delete payment.")
+    }
+  }
 
   return (
     <DetailDrawer
@@ -79,67 +101,105 @@ function PurchaseDetailDrawer({ purchaseId, onClose, onEdit }: { purchaseId: str
             <DetailRow label="Payment Date" value={purchase.paymentDate ? purchase.paymentDate.split('T')[0] : '-'} />
           </DrawerSection>
 
-          {/* Update Payment Status */}
-          <DrawerSection title="Update Payment Status">
-            <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
-              <div className={status === 'PARTIAL' ? "grid grid-cols-2 gap-3" : "w-full"}>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => {
-                      const newStatus = e.target.value
-                      setStatus(newStatus)
-                      if (newStatus === 'PAID') {
-                        setAmtPaid(purchase.totalAmount.toString())
-                      } else if (newStatus === 'PENDING' || newStatus === 'OVERDUE') {
-                        setAmtPaid('0')
-                        setMethod('')
-                      }
-                    }}
-                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
-                  >
-                    <option value="PENDING">UNPAID</option>
-                    <option value="PARTIAL">PARTIAL</option>
-                    <option value="PAID">PAID</option>
-                    <option value="OVERDUE">OVERDUE</option>
-                  </select>
-                </div>
-                {status === 'PARTIAL' && (
+          {/* Payment History */}
+          <DrawerSection title="Payment History">
+            {purchase.payments && purchase.payments.length > 0 ? (
+              <div className="space-y-2">
+                {purchase.payments.map((p: any) => (
+                  <div key={p.id} className="flex justify-between items-center p-2 rounded-sm border border-brass/10 bg-stone/20 text-xs font-mono">
+                    <div>
+                      <div className="font-semibold text-ink flex items-center gap-2">
+                        <span>{p.paymentDate?.split('T')[0]}</span>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-brass/10 text-ink/75 uppercase tracking-wider">{p.paymentMethod}</span>
+                      </div>
+                      {p.notes && <div className="text-[10px] text-ink/50 mt-0.5 font-sans">{p.notes}</div>}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-paddy">₹{p.amount.toLocaleString()}</span>
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePayment(p.id)}
+                          className="text-ledger-red hover:text-ledger-red/80 transition-colors p-1"
+                          title="Delete Installment"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-ink/50 italic py-1">No payment installments recorded yet.</div>
+            )}
+          </DrawerSection>
+
+          {/* Record New Payment */}
+          {balance > 0 && (
+            <DrawerSection title="Record Payment Installment">
+              <form onSubmit={handleRecordPayment} className="space-y-3 pt-1">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid ({"\u20B9"})</label>
-                    <Input
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount (₹)</label>
+                    <input
                       type="number"
-                      value={amtPaid}
-                      onChange={(e) => setAmtPaid(e.target.value)}
-                      className="h-9"
-                      placeholder="Enter amount"
+                      min="0.01"
+                      max={balance}
+                      step="0.01"
+                      value={recordAmount}
+                      onChange={(e) => setRecordAmount(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                      required
                     />
                   </div>
-                )}
-              </div>
-
-              {(status === 'PAID' || status === 'PARTIAL') && (
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
-                  <select
-                    value={method}
-                    onChange={(e) => setMethod(e.target.value)}
-                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
-                  >
-                    <option value="">Select Method</option>
-                    <option value="CASH">Cash</option>
-                    <option value="BANK_TRANSFER">Bank Transfer / UPI</option>
-                    <option value="CHEQUE">Cheque</option>
-                  </select>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
+                    <select
+                      value={recordMethod}
+                      onChange={(e) => setRecordMethod(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="BANK_TRANSFER">Bank Transfer / UPI</option>
+                      <option value="CHEQUE">Cheque</option>
+                    </select>
+                  </div>
                 </div>
-              )}
 
-              <Button type="submit" disabled={isUpdating} className="w-full h-9 text-xs font-medium uppercase tracking-wider">
-                {isUpdating ? 'Saving...' : 'Update Details'}
-              </Button>
-            </form>
-          </DrawerSection>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Date</label>
+                    <input
+                      type="date"
+                      value={recordDate}
+                      onChange={(e) => setRecordDate(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Notes</label>
+                    <input
+                      type="text"
+                      placeholder="Optional notes"
+                      value={recordNotes}
+                      onChange={(e) => setRecordNotes(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isRecording}
+                  className="w-full text-xs py-2 uppercase tracking-wider font-semibold border border-brass/20"
+                >
+                  {isRecording ? "Recording..." : "Record Payment"}
+                </Button>
+              </form>
+            </DrawerSection>
+          )}
 
           {/* Supplier Details */}
           <DrawerSection title="Supplier Details">

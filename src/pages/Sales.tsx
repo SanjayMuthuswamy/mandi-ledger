@@ -8,38 +8,61 @@ import { useSales, useSaleDetails } from "@/data/useSales"
 import { useVarieties } from "@/data/useVarieties"
 import { useCustomers } from "@/data/useCustomers"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus, ShoppingCart, Loader2, Eye, Calendar } from "lucide-react"
+import { Plus, ShoppingCart, Loader2, Eye, Calendar, Trash2 } from "lucide-react"
 
 function SaleDetailDrawer({ saleId, onClose, onEdit }: { saleId: string | null; onClose: () => void; onEdit: (sale: any) => void }) {
   const { sale, isLoading } = useSaleDetails(saleId)
-  const { updateStatus } = useSales()
+  const { addPayment, deletePayment } = useSales()
   const { user } = useAuth()
 
-  const [status, setStatus] = useState('')
-  const [amtPaid, setAmtPaid] = useState('')
-  const [method, setMethod] = useState('')
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [recordAmount, setRecordAmount] = useState('')
+  const [recordMethod, setRecordMethod] = useState('CASH')
+  const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0])
+  const [recordNotes, setRecordNotes] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
+
+  const balance = sale ? (sale.totalAmount - (sale.amountPaid ?? 0)) : 0
 
   useEffect(() => {
     if (sale) {
-      setStatus(sale.paymentStatus)
-      setAmtPaid(sale.amountPaid?.toString() || '0')
-      setMethod(sale.paymentMethod || '')
+      setRecordAmount(Math.max(0, sale.totalAmount - (sale.amountPaid ?? 0)).toFixed(2))
+      setRecordDate(new Date().toISOString().split('T')[0])
     }
   }, [sale])
 
-  const handleUpdatePayment = async (e: React.FormEvent) => {
+  const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!sale) return
-    setIsUpdating(true)
+    const amt = Number(recordAmount) || 0
+    if (amt <= 0) {
+      alert("Please enter a valid payment amount.")
+      return
+    }
+    setIsRecording(true)
     try {
-      const paidVal = Number(amtPaid) || 0
-      await updateStatus(sale.id, status, paidVal, method)
-      alert("Payment details updated successfully.")
+      await addPayment(sale.id, {
+        amount: amt,
+        paymentMethod: recordMethod,
+        paymentDate: recordDate,
+        notes: recordNotes || null
+      })
+      alert("Payment installment recorded successfully.")
+      setRecordNotes('')
     } catch (err: any) {
-      alert(err.data?.error || "Failed to update payment details.")
+      alert(err.data?.error || "Failed to record payment.")
     } finally {
-      setIsUpdating(false)
+      setIsRecording(false)
+    }
+  }
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!sale) return
+    if (!confirm("Are you sure you want to delete this payment installment? This will revert the paid balance.")) return
+    try {
+      await deletePayment(sale.id, paymentId)
+      alert("Payment installment deleted successfully.")
+    } catch (err: any) {
+      alert(err.data?.error || "Failed to delete payment.")
     }
   }
 
@@ -120,95 +143,106 @@ function SaleDetailDrawer({ saleId, onClose, onEdit }: { saleId: string | null; 
             ))}
           </DrawerSection>
 
-          {/* Update Payment Details */}
-          <DrawerSection title="Update Payment Status">
-            <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
-              <div className={status === 'PARTIAL' ? "grid grid-cols-2 gap-3" : "w-full"}>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => {
-                      const newStatus = e.target.value
-                      setStatus(newStatus)
-                      if (newStatus === 'PAID') {
-                        setAmtPaid(sale.totalAmount.toString())
-                      } else if (newStatus === 'PENDING' || newStatus === 'OVERDUE') {
-                        setAmtPaid('0')
-                        setMethod('')
-                      }
-                    }}
-                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
-                  >
-                    <option value="PENDING">UNPAID</option>
-                    <option value="PARTIAL">PARTIAL</option>
-                    <option value="PAID">PAID</option>
-                    <option value="OVERDUE">OVERDUE</option>
-                  </select>
-                </div>
-                {status === 'PARTIAL' && (
+          {/* Payment History */}
+          <DrawerSection title="Payment History">
+            {sale.payments && sale.payments.length > 0 ? (
+              <div className="space-y-2">
+                {sale.payments.map((p: any) => (
+                  <div key={p.id} className="flex justify-between items-center p-2 rounded-sm border border-brass/10 bg-stone/20 text-xs font-mono">
+                    <div>
+                      <div className="font-semibold text-ink flex items-center gap-2">
+                        <span>{p.paymentDate?.split('T')[0]}</span>
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-brass/10 text-ink/75 uppercase tracking-wider">{p.paymentMethod}</span>
+                      </div>
+                      {p.notes && <div className="text-[10px] text-ink/50 mt-0.5 font-sans">{p.notes}</div>}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-paddy">₹{p.amount.toLocaleString()}</span>
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePayment(p.id)}
+                          className="text-ledger-red hover:text-ledger-red/80 transition-colors p-1"
+                          title="Delete Installment"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-ink/50 italic py-1">No payment installments recorded yet.</div>
+            )}
+          </DrawerSection>
+
+          {/* Record New Payment */}
+          {balance > 0 && (
+            <DrawerSection title="Record Payment Installment">
+              <form onSubmit={handleRecordPayment} className="space-y-3 pt-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount (₹)</label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      max={balance}
+                      step="0.01"
+                      value={recordAmount}
+                      onChange={(e) => setRecordAmount(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                      required
+                    />
+                  </div>
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
+                    <select
+                      value={recordMethod}
+                      onChange={(e) => setRecordMethod(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="GPAY">Gpay / UPI</option>
+                      <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
+                      <option value="CHEQUE">Cheque</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Date</label>
+                    <input
+                      type="date"
+                      value={recordDate}
+                      onChange={(e) => setRecordDate(e.target.value)}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Notes</label>
                     <input
                       type="text"
-                      value={method}
-                      onChange={(e) => setMethod(e.target.value)}
-                      placeholder="Cash, UPI, NEFT"
+                      placeholder="Optional notes"
+                      value={recordNotes}
+                      onChange={(e) => setRecordNotes(e.target.value)}
                       className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
                     />
                   </div>
-                )}
-              </div>
-
-              {status === 'PARTIAL' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={sale.totalAmount}
-                      step="0.01"
-                      value={amtPaid}
-                      onChange={(e) => {
-                        const val = Number(e.target.value) || 0
-                        setAmtPaid(e.target.value)
-                        if (val >= sale.totalAmount) {
-                          setStatus('PAID')
-                        } else if (val > 0 && val < sale.totalAmount) {
-                          setStatus('PARTIAL')
-                        } else if (val === 0) {
-                          setStatus('PENDING')
-                        }
-                      }}
-                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold block">Remaining Balance</span>
-                    <div className="h-9 flex items-center px-1 font-mono text-xs font-bold">
-                      {(() => {
-                        const paid = Number(amtPaid) || 0
-                        const remaining = sale.totalAmount - paid
-                        if (remaining <= 0) {
-                          return <span className="text-paddy">₹0 (Settle)</span>
-                        }
-                        return <span className="text-ledger-red">₹{remaining.toLocaleString()}</span>
-                      })()}
-                    </div>
-                  </div>
                 </div>
-              )}
 
-              <Button
-                type="submit"
-                disabled={isUpdating}
-                className="w-full text-xs py-2 uppercase tracking-wider font-semibold border border-brass/20"
-              >
-                {isUpdating ? "Saving..." : "Update Details"}
-              </Button>
-            </form>
-          </DrawerSection>
+                <Button
+                  type="submit"
+                  disabled={isRecording}
+                  className="w-full text-xs py-2 uppercase tracking-wider font-semibold border border-brass/20"
+                >
+                  {isRecording ? "Recording..." : "Record Payment"}
+                </Button>
+              </form>
+            </DrawerSection>
+          )}
 
           {/* Transaction Summary */}
           <DrawerSection title="Transaction Summary">

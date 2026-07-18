@@ -146,6 +146,7 @@ model Purchase {
 
   supplier      Supplier      @relation(fields: [supplierId], references: [id])
   items         PurchaseItem[]
+  payments      Payment[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -199,6 +200,7 @@ model Sale {
   paymentStatus PaymentStatus @default(PENDING)
   amountPaid    Float         @default(0)
   paymentMethod String?
+  payments      Payment[]
 
   customer      Customer   @relation(fields: [customerId], references: [id])
   items         SaleItem[]
@@ -245,6 +247,25 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  saleId        String?
+  purchaseId    String?
+  amount        Float
+  paymentMethod String   // e.g. CASH, GPAY, BANK_TRANSFER, CHEQUE
+  paymentDate   DateTime @default(now())
+  notes         String?
+
+  sale          Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  purchase      Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([saleId])
+  @@index([purchaseId])
 }
 
 enum PaymentStatus {

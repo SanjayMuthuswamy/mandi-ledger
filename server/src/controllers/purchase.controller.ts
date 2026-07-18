@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../lib/prisma.js'
+import { z } from 'zod'
 import {
   CreatePurchaseSchema,
   UpdatePurchaseStatusSchema,
@@ -95,10 +96,21 @@ export async function createPurchase(req: Request, res: Response) {
             total: item.quantity * item.rate,
           })),
         },
+        ...(finalAmountPaid > 0 ? {
+          payments: {
+            create: {
+              amount: finalAmountPaid,
+              paymentMethod: body.paymentMethod || 'CASH',
+              paymentDate: finalPaymentDate || new Date(),
+              notes: 'Initial payment logged during purchase creation'
+            }
+          }
+        } : {})
       },
       include: {
         supplier: true,
         items: { include: { variety: true } },
+        payments: true,
       },
     })
 
@@ -140,6 +152,7 @@ export async function getPurchase(req: Request, res: Response) {
     include: {
       supplier: true,
       items: { include: { variety: true } },
+      payments: { orderBy: { paymentDate: 'asc' } },
     },
   })
   res.json(purchase)
@@ -380,5 +393,98 @@ export async function updatePurchase(req: Request, res: Response) {
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to update purchase.' })
   }
+}
+
+// ── POST /api/purchases/:id/payments ─────────────────────────────────────────
+export async function addPurchasePayment(req: Request, res: Response) {
+  const purchaseId = String(req.params.id)
+  const { amount, paymentMethod, paymentDate, notes } = z.object({
+    amount: z.number().positive(),
+    paymentMethod: z.string().min(1),
+    paymentDate: z.string().datetime().or(z.string().date()).optional(),
+    notes: z.string().optional().nullable(),
+  }).parse(req.body)
+
+  const result = await prisma.$transaction(async (tx) => {
+    const purchase = await tx.purchase.findUniqueOrThrow({
+      where: { id: purchaseId }
+    })
+
+    const newAmountPaid = purchase.amountPaid + amount
+    let newStatus = purchase.paymentStatus
+    if (newAmountPaid >= purchase.totalAmount) {
+      newStatus = 'PAID'
+    } else if (newAmountPaid > 0) {
+      newStatus = 'PARTIAL'
+    }
+
+    // 1. Create payment record
+    const payment = await tx.payment.create({
+      data: {
+        purchaseId,
+        amount,
+        paymentMethod,
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        notes
+      }
+    })
+
+    // 2. Update purchase
+    await tx.purchase.update({
+      where: { id: purchaseId },
+      data: {
+        amountPaid: newAmountPaid,
+        paymentStatus: newStatus,
+        paymentMethod: paymentMethod,
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date()
+      }
+    })
+
+    return payment
+  })
+
+  res.status(201).json(result)
+}
+
+// ── DELETE /api/purchases/:id/payments/:paymentId ──────────────────────────────
+export async function deletePurchasePayment(req: Request, res: Response) {
+  const purchaseId = String(req.params.id)
+  const paymentId = String(req.params.paymentId)
+
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUniqueOrThrow({
+      where: { id: paymentId }
+    })
+
+    const purchase = await tx.purchase.findUniqueOrThrow({
+      where: { id: purchaseId }
+    })
+
+    const newAmountPaid = Math.max(0, purchase.amountPaid - payment.amount)
+    let newStatus = purchase.paymentStatus
+    if (newAmountPaid >= purchase.totalAmount) {
+      newStatus = 'PAID'
+    } else if (newAmountPaid > 0) {
+      newStatus = 'PARTIAL'
+    } else {
+      newStatus = 'PENDING'
+    }
+
+    // 1. Delete payment record
+    await tx.payment.delete({
+      where: { id: paymentId }
+    })
+
+    // 2. Update purchase
+    await tx.purchase.update({
+      where: { id: purchaseId },
+      data: {
+        amountPaid: newAmountPaid,
+        paymentStatus: newStatus
+      }
+    })
+  })
+
+  res.status(204).send()
 }
 

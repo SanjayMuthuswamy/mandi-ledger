@@ -18,6 +18,12 @@ salesRouter.get('/:id', asyncHandler(salesController.getSale))
 // PATCH  /api/sales/:id/status   – update payment status
 salesRouter.patch('/:id/status', asyncHandler(salesController.updateSaleStatus))
 
+// POST   /api/sales/:id/payments - add payment installment
+salesRouter.post('/:id/payments', asyncHandler(salesController.addSalePayment))
+
+// DELETE /api/sales/:id/payments/:paymentId - delete payment installment
+salesRouter.delete('/:id/payments/:paymentId', asyncHandler(salesController.deleteSalePayment))
+
 // DELETE /api/sales/:id          – soft delete
 salesRouter.delete('/:id', asyncHandler(salesController.deleteSale))
 

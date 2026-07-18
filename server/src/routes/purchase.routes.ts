@@ -21,6 +21,18 @@ purchaseRouter.patch(
   asyncHandler(purchaseController.updatePurchaseStatus)
 )
 
+// POST   /api/purchases/:id/payments - add payment installment
+purchaseRouter.post(
+  '/:id/payments',
+  asyncHandler(purchaseController.addPurchasePayment)
+)
+
+// DELETE /api/purchases/:id/payments/:paymentId - delete payment installment
+purchaseRouter.delete(
+  '/:id/payments/:paymentId',
+  asyncHandler(purchaseController.deletePurchasePayment)
+)
+
 // DELETE /api/purchases/:id          – soft delete
 purchaseRouter.delete('/:id', asyncHandler(purchaseController.deletePurchase))
 

@@ -15,6 +15,14 @@ export interface SaleItem {
   }
 }
 
+export interface Payment {
+  id: string
+  amount: number
+  paymentMethod: string
+  paymentDate: string
+  notes?: string | null
+}
+
 export interface Sale {
   id: string
   invoiceNo: string
@@ -27,8 +35,14 @@ export interface Sale {
   customer: {
     id: string
     name: string
+    phone?: string | null
+    address?: string | null
+    gstNumber?: string | null
   }
   items: SaleItem[]
+  payments?: Payment[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface SalesResponse {
@@ -102,6 +116,28 @@ export function useSales(page = 1, limit = 20) {
     },
   })
 
+  const addPaymentMutation = useMutation({
+    mutationFn: async ({ saleId, payment }: { saleId: string; payment: any }) => {
+      return await api.post(`/sales/${saleId}/payments`, payment)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['sale', variables.saleId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    }
+  })
+
+  const deletePaymentMutation = useMutation({
+    mutationFn: async ({ saleId, paymentId }: { saleId: string; paymentId: string }) => {
+      return await api.delete(`/sales/${saleId}/payments/${paymentId}`)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['sale', variables.saleId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    }
+  })
+
   return {
     sales: data?.data || [],
     meta: data?.meta,
@@ -112,6 +148,8 @@ export function useSales(page = 1, limit = 20) {
     updateStatus: (id: string, status: string, amountPaid?: number, paymentMethod?: string | null) => 
       updateSaleStatusMutation.mutateAsync({ id, status, amountPaid, paymentMethod }),
     updateSale: (id: string, saleData: any) => updateSaleMutation.mutateAsync({ id, saleData }),
+    addPayment: (saleId: string, payment: any) => addPaymentMutation.mutateAsync({ saleId, payment }),
+    deletePayment: (saleId: string, paymentId: string) => deletePaymentMutation.mutateAsync({ saleId, paymentId }),
   }
 }
 
@@ -121,7 +159,7 @@ export function useSaleDetails(id: string | null) {
     queryFn: async () => {
       if (!id) return null
       const response = await api.get(`/sales/${id}`)
-      return response
+      return response as Sale
     },
     enabled: !!id,
   })

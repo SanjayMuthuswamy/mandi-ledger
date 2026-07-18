@@ -15,6 +15,14 @@ export interface PurchaseItem {
   }
 }
 
+export interface Payment {
+  id: string
+  amount: number
+  paymentMethod: string
+  paymentDate: string
+  notes?: string | null
+}
+
 export interface Purchase {
   id: string
   entryNo: string
@@ -28,8 +36,14 @@ export interface Purchase {
   supplier: {
     id: string
     name: string
+    phone?: string | null
+    address?: string | null
+    gstNumber?: string | null
   }
   items: PurchaseItem[]
+  payments?: Payment[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface PurchasesResponse {
@@ -101,6 +115,28 @@ export function usePurchases(page = 1, limit = 20) {
     },
   })
 
+  const addPaymentMutation = useMutation({
+    mutationFn: async ({ purchaseId, payment }: { purchaseId: string; payment: any }) => {
+      return await api.post(`/purchases/${purchaseId}/payments`, payment)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase', variables.purchaseId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    }
+  })
+
+  const deletePaymentMutation = useMutation({
+    mutationFn: async ({ purchaseId, paymentId }: { purchaseId: string; paymentId: string }) => {
+      return await api.delete(`/purchases/${purchaseId}/payments/${paymentId}`)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase', variables.purchaseId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    }
+  })
+
   return {
     purchases: data?.data || [],
     meta: data?.meta,
@@ -111,6 +147,8 @@ export function usePurchases(page = 1, limit = 20) {
     updateStatus: (id: string, status: string, amountPaid?: number, paymentMethod?: string, paymentDate?: string | null) => 
       updatePurchaseStatusMutation.mutateAsync({ id, status, amountPaid, paymentMethod, paymentDate }),
     updatePurchase: (id: string, purchaseData: any) => updatePurchaseMutation.mutateAsync({ id, purchaseData }),
+    addPayment: (purchaseId: string, payment: any) => addPaymentMutation.mutateAsync({ purchaseId, payment }),
+    deletePayment: (purchaseId: string, paymentId: string) => deletePaymentMutation.mutateAsync({ purchaseId, paymentId }),
   }
 }
 
@@ -120,7 +158,7 @@ export function usePurchaseDetails(id: string | null) {
     queryFn: async () => {
       if (!id) return null
       const response = await api.get(`/purchases/${id}`)
-      return response
+      return response as Purchase
     },
     enabled: !!id,
   })
