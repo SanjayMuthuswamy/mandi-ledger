@@ -8,6 +8,7 @@ import { DetailDrawer, DetailRow, DrawerSection } from "@/components/ui/DetailDr
 import { Input } from "@/components/ui/Input"
 import { useAuth } from "@/contexts/AuthContext"
 import { Plus } from "lucide-react"
+import { parseVarietyName } from "@/lib/utils"
 
 function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
   item: any | null
@@ -17,6 +18,9 @@ function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
 }) {
   if (!item) return null
 
+  const { brandName, kgPerBag, bags } = parseVarietyName(item.varietyName, item.quantity)
+  const maxBags = Math.round(item.max / (kgPerBag || 26))
+  const thresholdBags = Math.round(item.threshold / (kgPerBag || 26))
   const stockPercentage = item.max > 0 ? Math.min(100, Math.round((item.quantity / item.max) * 100)) : 0
   const isLow = item.quantity < item.threshold
 
@@ -24,8 +28,8 @@ function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
     <DetailDrawer
       isOpen={!!item}
       onClose={onClose}
-      title={item.varietyName}
-      subtitle={`${item.quantity.toLocaleString()} kg available`}
+      title={brandName}
+      subtitle={`${bags.toLocaleString()} bags (${kgPerBag}kg/bag) available`}
     >
       <div className="divide-y divide-brass/15">
 
@@ -43,7 +47,7 @@ function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
             <div className={`p-3 rounded-sm border ${isLow ? 'border-ledger-red/30 bg-ledger-red/5' : 'border-paddy/30 bg-paddy/5'}`}>
               <div className="text-[10px] uppercase tracking-widest font-sans font-semibold text-ink/50">Current Stock</div>
               <div className={`font-mono text-xl font-bold mt-1 ${isLow ? 'text-ledger-red' : 'text-paddy'}`}>
-                {item.quantity.toLocaleString()} kg
+                {bags.toLocaleString()} bags
               </div>
             </div>
             <div className="p-3 rounded-sm border border-brass/20 bg-ink/5">
@@ -55,9 +59,9 @@ function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
 
         {/* Stock Levels */}
         <DrawerSection title="Stock Levels">
-          <DetailRow label="Available Stock" value={<span className="font-mono font-bold">{item.quantity.toLocaleString()} kg</span>} />
-          <DetailRow label="Min Alert Threshold" value={<span className="font-mono">{item.threshold.toLocaleString()} kg</span>} />
-          <DetailRow label="Max Capacity" value={<span className="font-mono">{item.max.toLocaleString()} kg</span>} />
+          <DetailRow label="Available Stock" value={<span className="font-mono font-bold">{bags.toLocaleString()} bags ({item.quantity.toLocaleString()} kg)</span>} />
+          <DetailRow label="Min Alert Threshold" value={<span className="font-mono">{thresholdBags.toLocaleString()} bags ({item.threshold.toLocaleString()} kg)</span>} />
+          <DetailRow label="Max Capacity" value={<span className="font-mono">{maxBags.toLocaleString()} bags ({item.max.toLocaleString()} kg)</span>} />
           <DetailRow label="Stock Status" value={
             isLow
               ? <span className="text-ledger-red text-xs font-bold uppercase tracking-widest">⚠ Low Stock</span>
@@ -163,39 +167,42 @@ export function Stock() {
       <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)]">
         {/* Mobile Cards */}
         <div className="md:hidden flex flex-col gap-4">
-          {stock.map(item => (
-            <div
-              key={item.id}
-              className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-4 relative overflow-hidden cursor-pointer hover:border-brass transition-colors"
-              onClick={() => setSelectedItem(item)}
-            >
-              <div className="flex justify-between items-start">
-                <div className="font-sans font-medium text-ink flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-variety-${item.varietyId}`} />
-                  {item.varietyName}
+          {stock.map(item => {
+            const { brandName, kgPerBag, bags } = parseVarietyName(item.varietyName, item.quantity)
+            return (
+              <div
+                key={item.id}
+                className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-4 relative overflow-hidden cursor-pointer hover:border-brass transition-colors"
+                onClick={() => setSelectedItem(item)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="font-sans font-medium text-ink flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full bg-variety-${item.varietyId}`} />
+                    {brandName} <span className="text-xs text-ink/50">({kgPerBag}kg)</span>
+                  </div>
+                  <div className="text-right text-sm">
+                    <div className="font-mono">₹{item.price}/kg</div>
+                    <div className="text-xs text-ink/50 mt-1 font-mono">{item.lastUpdated}</div>
+                  </div>
                 </div>
-                <div className="text-right text-sm">
-                  <div className="font-mono">₹{item.price}/kg</div>
-                  <div className="text-xs text-ink/50 mt-1 font-mono">{item.lastUpdated}</div>
+                
+                <GrainGauge
+                  quantity={item.quantity}
+                  max={item.max}
+                  threshold={item.threshold}
+                  varietyId={item.varietyId}
+                />
+                
+                <div className="border-t border-brass/20 pt-4 mt-4 flex justify-between items-center">
+                  <div className="text-ink font-medium">{bags.toLocaleString()} bags</div>
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => handleEditStock(item)}>EDIT</Button>
+                    <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
+                  </div>
                 </div>
               </div>
-              
-              <GrainGauge
-                quantity={item.quantity}
-                max={item.max}
-                threshold={item.threshold}
-                varietyId={item.varietyId}
-              />
-              
-              <div className="border-t border-brass/20 pt-4 mt-4 flex justify-between items-center">
-                <div className="text-ink font-medium">₹{item.price}/kg</div>
-                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" className="h-6 px-2 text-xs text-ink hover:bg-ink/10" onClick={() => handleEditStock(item)}>EDIT</Button>
-                  <Button variant="ghost" className="h-6 px-2 text-xs text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
           {stock.length === 0 && (
             <div className="p-8 text-center font-sans text-ink/70 border border-brass/30">
               No grain entries yet.
@@ -215,33 +222,36 @@ export function Stock() {
             </tr>
           </thead>
           <tbody className="divide-y divide-brass/10 font-mono">
-            {stock.map((item) => (
-              <tr
-                key={item.id}
-                className="hover:bg-ink/5 transition-colors group cursor-pointer"
-                onClick={() => setSelectedItem(item)}
-              >
-                <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-variety-${item.varietyId}`} />
-                  {item.varietyName}
-                </td>
-                <td className="p-4">
-                  <GrainGauge
-                    quantity={item.quantity}
-                    max={item.max}
-                    threshold={item.threshold}
-                    varietyId={item.varietyId}
-                  />
-                  <div className="text-xs mt-1 text-ink/70">{item.quantity.toLocaleString()} kg</div>
-                </td>
-                <td className="p-4">₹{item.price}/kg</td>
-                <td className="p-4 text-ink/70">{item.lastUpdated}</td>
-                <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" className="h-8 px-2 text-xs text-ink hover:bg-ink/10 mr-2" onClick={() => handleEditStock(item)}>EDIT</Button>
-                  <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
-                </td>
-              </tr>
-            ))}
+            {stock.map((item) => {
+              const { brandName, kgPerBag, bags } = parseVarietyName(item.varietyName, item.quantity)
+              return (
+                <tr
+                  key={item.id}
+                  className="hover:bg-ink/5 transition-colors group cursor-pointer"
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <td className="p-4 font-sans font-medium text-ink flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full bg-variety-${item.varietyId}`} />
+                    {brandName} <span className="text-xs font-mono text-ink/50">({kgPerBag}kg)</span>
+                  </td>
+                  <td className="p-4">
+                    <GrainGauge
+                      quantity={item.quantity}
+                      max={item.max}
+                      threshold={item.threshold}
+                      varietyId={item.varietyId}
+                    />
+                    <div className="text-xs mt-1 text-ink/70">{bags.toLocaleString()} bags ({item.quantity.toLocaleString()} kg)</div>
+                  </td>
+                  <td className="p-4">₹{item.price}/kg</td>
+                  <td className="p-4 text-ink/70">{item.lastUpdated}</td>
+                  <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" className="h-8 px-2 text-xs text-ink hover:bg-ink/10 mr-2" onClick={() => handleEditStock(item)}>EDIT</Button>
+                    <Button variant="ghost" className="h-8 px-2 text-xs text-ledger-red hover:text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteStock(item.id)}>DELETE</Button>
+                  </td>
+                </tr>
+              )
+            })}
             {stock.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-8 text-center font-sans text-ink/70">
@@ -271,7 +281,7 @@ export function Stock() {
           )}
           <div className="space-y-2">
             <label className="font-medium text-sm">Rice Variety Name</label>
-            <Input name="varietyName" placeholder="e.g. Sona Masuri" required />
+            <Input name="varietyName" placeholder="e.g. Sona Masuri 26kg" required />
           </div>
           <div className="space-y-2">
             <label className="font-medium text-sm">Variety Type</label>
