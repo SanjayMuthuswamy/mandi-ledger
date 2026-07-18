@@ -20,3 +20,6 @@ salesRouter.patch('/:id/status', asyncHandler(salesController.updateSaleStatus))
 
 // DELETE /api/sales/:id          – soft delete
 salesRouter.delete('/:id', asyncHandler(salesController.deleteSale))
+
+// PUT    /api/sales/:id          – update/edit sale transaction
+salesRouter.put('/:id', asyncHandler(salesController.updateSale))

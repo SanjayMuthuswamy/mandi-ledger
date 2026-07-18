@@ -69,6 +69,11 @@ export async function createPurchase(req: Request, res: Response) {
 
   // Use a transaction: create purchase + upsert stock for each item
   const purchase = await prisma.$transaction(async (tx) => {
+    const finalAmountPaid = body.paymentStatus === 'PAID' ? totalAmount : (body.amountPaid ?? 0)
+    const finalPaymentDate = body.paymentDate 
+      ? new Date(body.paymentDate) 
+      : (body.paymentStatus === 'PAID' || body.paymentStatus === 'PARTIAL' ? new Date() : null)
+
     const created = await tx.purchase.create({
       data: {
         entryNo,
@@ -76,6 +81,9 @@ export async function createPurchase(req: Request, res: Response) {
         purchaseDate: new Date(body.purchaseDate),
         totalAmount,
         paymentStatus: body.paymentStatus,
+        amountPaid: finalAmountPaid,
+        paymentMethod: body.paymentMethod,
+        paymentDate: finalPaymentDate,
         invoiceDoc: body.invoiceDoc,
         createdBy: req.user?.sub,
         items: {
@@ -139,19 +147,213 @@ export async function getPurchase(req: Request, res: Response) {
 
 // ── PATCH /api/purchases/:id/status ──────────────────────────────────────────
 export async function updatePurchaseStatus(req: Request, res: Response) {
-  const { paymentStatus } = UpdatePurchaseStatusSchema.parse(req.body)
+  const { paymentStatus, amountPaid, paymentMethod, paymentDate } = UpdatePurchaseStatusSchema.parse(req.body)
+  const existing = await prisma.purchase.findUniqueOrThrow({ where: { id: String(req.params.id) } })
+
+  let finalAmountPaid = amountPaid
+  if (paymentStatus === 'PAID' && amountPaid === undefined) {
+    finalAmountPaid = existing.totalAmount
+  } else if (paymentStatus === 'PENDING' && amountPaid === undefined) {
+    finalAmountPaid = 0
+  }
+
+  let finalPaymentDate = paymentDate
+  if (paymentDate === undefined) {
+    if (paymentStatus === 'PAID') {
+      finalPaymentDate = new Date().toISOString()
+    } else if (paymentStatus === 'PENDING') {
+      finalPaymentDate = null
+    }
+  }
+
   const purchase = await prisma.purchase.update({
     where: { id: String(req.params.id) },
-    data: { paymentStatus },
+    data: { 
+      paymentStatus,
+      ...(finalAmountPaid !== undefined ? { amountPaid: finalAmountPaid } : {}),
+      ...(paymentMethod !== undefined ? { paymentMethod } : {}),
+      ...(finalPaymentDate !== undefined ? { paymentDate: finalPaymentDate ? new Date(finalPaymentDate) : null } : {}),
+    },
   })
   res.json(purchase)
 }
 
 // ── DELETE /api/purchases/:id ─────────────────────────────────────────────────
 export async function deletePurchase(req: Request, res: Response) {
-  await prisma.purchase.update({
-    where: { id: String(req.params.id) },
-    data: { deletedAt: new Date() },
-  })
-  res.status(204).send()
+  if (req.user?.roleName !== 'ADMIN') {
+    res.status(403).json({ error: 'Access Denied: Only Administrators can delete purchase records.' })
+    return
+  }
+
+  const purchaseId = String(req.params.id)
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Get the purchase and its items
+      const purchase = await tx.purchase.findFirstOrThrow({
+        where: { id: purchaseId, deletedAt: null },
+        include: { items: true },
+      })
+
+      // 2. Find warehouse
+      const warehouse = await tx.warehouse.findFirst()
+      if (!warehouse) {
+        throw new Error('No warehouse configured. Cannot revert stock.')
+      }
+
+      // 3. Revert stock (decrement stock since it was a purchase)
+      for (const item of purchase.items) {
+        const revertKg = item.quantity * item.kgPerBag
+        await tx.stock.update({
+          where: {
+            warehouseId_riceVarietyId: {
+              warehouseId: warehouse.id,
+              riceVarietyId: item.riceVarietyId,
+            },
+          },
+          data: { quantity: { decrement: revertKg } },
+        })
+      }
+
+      // 4. Create audit log entry
+      await tx.auditLog.create({
+        data: {
+          userId: req.user?.sub,
+          action: 'PURCHASE_DELETED',
+          entityType: 'Purchase',
+          entityId: purchaseId,
+          oldValue: JSON.parse(JSON.stringify(purchase)),
+          newValue: { deletedAt: new Date().toISOString(), status: 'REVERTED' },
+        },
+      })
+
+      // 5. Soft delete the purchase
+      await tx.purchase.update({
+        where: { id: purchaseId },
+        data: { deletedAt: new Date() },
+      })
+    })
+
+    res.status(204).send()
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to delete purchase and revert stock.' })
+  }
+}
+
+// ── PUT /api/purchases/:id ─────────────────────────────────────────────────────
+export async function updatePurchase(req: Request, res: Response) {
+  if (req.user?.roleName !== 'ADMIN') {
+    res.status(403).json({ error: 'Access Denied: Only Administrators can edit purchase records.' })
+    return
+  }
+
+  const purchaseId = String(req.params.id)
+  const body = CreatePurchaseSchema.parse(req.body)
+  const totalAmount = body.items.reduce((s, i) => s + i.quantity * i.rate, 0)
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      // 1. Get existing purchase
+      const existing = await tx.purchase.findFirstOrThrow({
+        where: { id: purchaseId, deletedAt: null },
+        include: { items: true },
+      })
+
+      // 2. Find warehouse
+      const warehouse = await tx.warehouse.findFirst()
+      if (!warehouse) {
+        throw new Error('No warehouse configured. Cannot update stock.')
+      }
+
+      // 3. Revert old stock (decrement stock since it was a purchase)
+      for (const item of existing.items) {
+        const revertKg = item.quantity * item.kgPerBag
+        await tx.stock.update({
+          where: {
+            warehouseId_riceVarietyId: {
+              warehouseId: warehouse.id,
+              riceVarietyId: item.riceVarietyId,
+            },
+          },
+          data: { quantity: { decrement: revertKg } },
+        })
+      }
+
+      // 4. Update new stock (increment stock)
+      for (const item of body.items) {
+        const incrementKg = item.quantity * (item.kgPerBag ?? 26)
+        await tx.stock.upsert({
+          where: {
+            warehouseId_riceVarietyId: {
+              warehouseId: warehouse.id,
+              riceVarietyId: item.riceVarietyId,
+            },
+          },
+          update: { quantity: { increment: incrementKg } },
+          create: {
+            warehouseId: warehouse.id,
+            riceVarietyId: item.riceVarietyId,
+            quantity: incrementKg,
+            minThreshold: 1000,
+          },
+        })
+      }
+
+      // 5. Delete old items
+      await tx.purchaseItem.deleteMany({
+        where: { purchaseId },
+      })
+
+      // 6. Update purchase
+      const finalAmountPaid = body.paymentStatus === 'PAID' ? totalAmount : (body.amountPaid ?? 0)
+      const finalPaymentDate = body.paymentDate 
+        ? new Date(body.paymentDate) 
+        : (body.paymentStatus === 'PAID' || body.paymentStatus === 'PARTIAL' ? new Date() : null)
+
+      const updatedPurchase = await tx.purchase.update({
+        where: { id: purchaseId },
+        data: {
+          supplierId: body.supplierId,
+          purchaseDate: new Date(body.purchaseDate),
+          totalAmount,
+          paymentStatus: body.paymentStatus,
+          amountPaid: finalAmountPaid,
+          paymentMethod: body.paymentMethod,
+          paymentDate: finalPaymentDate,
+          invoiceDoc: body.invoiceDoc,
+          items: {
+            create: body.items.map((item) => ({
+              riceVarietyId: item.riceVarietyId,
+              quantity: item.quantity,
+              kgPerBag: item.kgPerBag ?? 26,
+              rate: item.rate,
+              total: item.quantity * item.rate,
+            })),
+          },
+        },
+        include: {
+          supplier: true,
+          items: { include: { variety: true } },
+        },
+      })
+
+      // 7. Write audit log
+      await tx.auditLog.create({
+        data: {
+          userId: req.user?.sub,
+          action: 'PURCHASE_UPDATED',
+          entityType: 'Purchase',
+          entityId: purchaseId,
+          oldValue: JSON.parse(JSON.stringify(existing)),
+          newValue: JSON.parse(JSON.stringify(updatedPurchase)),
+        },
+      })
+
+      return updatedPurchase
+    })
+
+    res.json(updated)
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to update purchase.' })
+  }
 }

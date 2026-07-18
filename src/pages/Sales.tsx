@@ -8,11 +8,12 @@ import { useSales, useSaleDetails } from "@/data/useSales"
 import { useVarieties } from "@/data/useVarieties"
 import { useCustomers } from "@/data/useCustomers"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus, ShoppingCart, Loader2, Eye } from "lucide-react"
+import { Plus, ShoppingCart, Loader2, Eye, Calendar } from "lucide-react"
 
-function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose: () => void }) {
+function SaleDetailDrawer({ saleId, onClose, onEdit }: { saleId: string | null; onClose: () => void; onEdit: (sale: any) => void }) {
   const { sale, isLoading } = useSaleDetails(saleId)
   const { updateStatus } = useSales()
+  const { user } = useAuth()
 
   const [status, setStatus] = useState('')
   const [amtPaid, setAmtPaid] = useState('')
@@ -47,13 +48,14 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
       isOpen={!!saleId}
       onClose={onClose}
       title={sale?.invoiceNo || "Sale Details"}
-      subtitle={sale ? `${sale.saleDate?.split('T')[0]} · ${sale.customer?.name}` : undefined}
+      subtitle={sale ? `${sale.saleDate?.split('T')[0]} \u00B7 ${sale.customer?.name}` : undefined}
       actions={
         <DrawerActionBar 
           onDownload={() => {
             if (!sale) return
             window.open(`/invoice.html?saleId=${sale.id}`, '_blank')
           }}
+          onEdit={user?.role === 'ADMIN' ? () => onEdit(sale) : undefined}
         />
       }
     >
@@ -239,13 +241,16 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
 }
 
 export function Sales() {
-  const { sales, isLoading: isSalesLoading, addSale, deleteSale } = useSales(1, 100)
+  const { sales, isLoading: isSalesLoading, addSale, deleteSale, updateSale } = useSales(1, 100)
   const { varieties, isLoading: isVarietiesLoading } = useVarieties()
   const { customers, isLoading: isCustomersLoading } = useCustomers(1, 100)
   const { user } = useAuth()
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
+  const [editingSale, setEditingSale] = useState<any | null>(null)
+  const [transactionDate, setTransactionDate] = useState('')
+
   const [selectedVariety, setSelectedVariety] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -256,6 +261,72 @@ export function Sales() {
   const [amtPaid, setAmtPaid] = useState('0')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [isRecording, setIsRecording] = useState(false)
+ 
+  const [filterStartDate, setFilterStartDate] = useState('')
+  const [filterEndDate, setFilterEndDate] = useState('')
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
+  const [filterCustomer, setFilterCustomer] = useState('')
+  const [filterVariety, setFilterVariety] = useState('')
+
+  const openCreateDrawer = () => {
+    setEditingSale(null)
+    setSelectedCustomer('')
+    setSelectedVariety('')
+    setQuantity('')
+    setKgPerBag('26')
+    setRate('')
+    setPaymentStatus('PENDING')
+    setAmtPaid('0')
+    setPaymentMethod('')
+    setTransactionDate(new Date().toISOString().split('T')[0])
+    setErrorMsg('')
+    setIsDrawerOpen(true)
+  }
+
+  const startEditSale = (sale: any) => {
+    setEditingSale(sale)
+    setSelectedCustomer(sale.customerId)
+    setSelectedVariety(sale.items[0]?.riceVarietyId || '')
+    setQuantity(sale.items[0]?.quantity.toString() || '')
+    setKgPerBag((sale.items[0]?.kgPerBag ?? 26).toString())
+    setRate(sale.items[0]?.rate.toString() || '')
+    setPaymentStatus(sale.paymentStatus)
+    setAmtPaid(sale.amountPaid?.toString() || '0')
+    setPaymentMethod(sale.paymentMethod || '')
+    setTransactionDate(sale.saleDate.split('T')[0])
+    setErrorMsg('')
+    setSelectedSaleId(null) // close details
+    setIsDrawerOpen(true) // open form
+  }
+
+  const filteredSales = useMemo(() => {
+    return sales.filter(sale => {
+      const dateStr = sale.saleDate.split('T')[0]
+      if (filterStartDate && dateStr < filterStartDate) return false
+      if (filterEndDate && dateStr > filterEndDate) return false
+
+      if (filterPaymentStatus && sale.paymentStatus !== filterPaymentStatus) return false
+
+      if (filterCustomer && sale.customerId !== filterCustomer) return false
+
+      if (filterVariety) {
+        const hasVariety = sale.items?.some(item => item.riceVarietyId === filterVariety)
+        if (!hasVariety) return false
+      }
+
+      return true
+    })
+  }, [sales, filterStartDate, filterEndDate, filterPaymentStatus, filterCustomer, filterVariety])
+
+  const hasActiveFilters = !!(filterStartDate || filterEndDate || filterPaymentStatus || filterCustomer || filterVariety)
+
+  const clearFilters = () => {
+    setFilterStartDate('')
+    setFilterEndDate('')
+    setFilterPaymentStatus('')
+    setFilterCustomer('')
+    setFilterVariety('')
+  }
  
   const handleRecordSale = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -269,29 +340,43 @@ export function Sales() {
     
     if (variety) {
       const totalStock = variety.stocks?.reduce((sum, s) => sum + s.quantity, 0) || 0
-      if (totalRequestedKg > totalStock) {
-        setErrorMsg(`Insufficient stock. Current stock for ${variety.name} is only ${totalStock.toLocaleString()} kg. (Requested: ${totalRequestedKg.toLocaleString()} kg)`)
+      const oldQtyBags = editingSale ? (editingSale.items[0]?.quantity || 0) : 0
+      const oldKgWeight = editingSale ? (editingSale.items[0]?.kgPerBag || 26) : 0
+      const oldTotalKg = oldQtyBags * oldKgWeight
+      const adjustedStock = totalStock + oldTotalKg
+
+      if (totalRequestedKg > adjustedStock) {
+        setErrorMsg(`Insufficient stock. Current stock for ${variety.name} is only ${adjustedStock.toLocaleString()} kg. (Requested: ${totalRequestedKg.toLocaleString()} kg)`)
         return
       }
  
       try {
         setIsRecording(true)
         const finalAmtPaid = paymentStatus === 'PAID' ? computedTotal : (paymentStatus === 'PARTIAL' ? Number(amtPaid) : 0)
-        await addSale({
+        
+        const saleData = {
           customerId: selectedCustomer,
-          saleDate: new Date().toISOString(),
+          saleDate: new Date(transactionDate).toISOString(),
           paymentStatus,
           amountPaid: finalAmtPaid,
-          paymentMethod: paymentStatus === 'PARTIAL' ? paymentMethod : null,
+          paymentMethod: (paymentStatus === 'PARTIAL' || paymentStatus === 'PAID') ? paymentMethod : null,
           items: [{
             riceVarietyId: selectedVariety,
             quantity: qtyBags,
             kgPerBag: kgWeight,
             rate: Number(rate)
           }]
-        })
+        }
+
+        if (editingSale) {
+          await updateSale(editingSale.id, saleData)
+          alert("Sale transaction updated successfully.")
+        } else {
+          await addSale(saleData)
+        }
         
         setIsDrawerOpen(false)
+        setEditingSale(null)
         setQuantity('')
         setRate('')
         setKgPerBag('26')
@@ -319,7 +404,7 @@ export function Sales() {
       alert("Access Denied: Only Administrators can delete sales records.")
       return
     }
-    const confirmed = window.confirm("Are you sure you want to delete this sale? Stock will NOT be automatically reverted.")
+    const confirmed = window.confirm("Are you sure you want to delete this sale? Stock will be automatically reverted.")
     if (confirmed) {
       deleteSale(id)
     }
@@ -341,7 +426,78 @@ export function Sales() {
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex justify-between items-start">
         <StampHeader title="Sales Ledger" />
-        <Button onClick={() => setIsDrawerOpen(true)} className="hidden md:flex">Record Sale</Button>
+        <Button onClick={openCreateDrawer} className="hidden md:flex">Record Sale</Button>
+      </div>
+
+      {/* Filters Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 bg-stone-light p-3 border border-brass/30 shadow-[2px_2px_0px_0px_rgba(140,111,62,0.2)] rounded-sm">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Date Range */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-stone border border-brass/30 rounded-sm font-mono text-xs text-ink/80 w-full md:w-auto">
+            <Calendar size={14} className="text-ink/50 shrink-0" />
+            <input 
+              type="date" 
+              value={filterStartDate} 
+              onChange={(e) => setFilterStartDate(e.target.value)} 
+              className="bg-transparent border-0 outline-none text-ink text-xs focus:ring-0 cursor-pointer p-0 w-full md:w-28 font-mono"
+              placeholder="Start Date"
+            />
+            <span className="text-ink/40 text-xs">to</span>
+            <input 
+              type="date" 
+              value={filterEndDate} 
+              onChange={(e) => setFilterEndDate(e.target.value)} 
+              className="bg-transparent border-0 outline-none text-ink text-xs focus:ring-0 cursor-pointer p-0 w-full md:w-28 font-mono"
+              placeholder="End Date"
+            />
+          </div>
+
+          {/* Payment Status Dropdown */}
+          <select
+            value={filterPaymentStatus}
+            onChange={(e) => setFilterPaymentStatus(e.target.value)}
+            className="flex-1 md:flex-initial h-8 px-2 bg-stone border border-brass/30 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric min-w-[130px]"
+          >
+            <option value="">All Payment Statuses</option>
+            <option value="PAID">PAID</option>
+            <option value="PENDING">UNPAID</option>
+            <option value="PARTIAL">PARTIAL</option>
+            <option value="OVERDUE">OVERDUE</option>
+          </select>
+
+          {/* Customer Dropdown */}
+          <select
+            value={filterCustomer}
+            onChange={(e) => setFilterCustomer(e.target.value)}
+            className="flex-1 md:flex-initial h-8 px-2 bg-stone border border-brass/30 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric min-w-[140px]"
+          >
+            <option value="">All Customers</option>
+            {customers.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+
+          {/* Rice Variety Dropdown */}
+          <select
+            value={filterVariety}
+            onChange={(e) => setFilterVariety(e.target.value)}
+            className="flex-1 md:flex-initial h-8 px-2 bg-stone border border-brass/30 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric min-w-[130px]"
+          >
+            <option value="">All Varieties</option>
+            {varieties.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="w-full md:w-auto h-8 px-3 bg-ledger-red text-stone text-xs uppercase font-bold hover:bg-ledger-red/80 rounded-sm font-sans transition-colors md:ml-auto"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {(isSalesLoading || isVarietiesLoading || isCustomersLoading) ? (
@@ -351,7 +507,7 @@ export function Sales() {
       ) : (
         <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)] overflow-hidden">
           <div className="md:hidden flex flex-col gap-4 bg-stone pb-4">
-            {sales.map(sale => (
+            {filteredSales.map(sale => (
               <div
                 key={sale.id}
                 className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-brass transition-colors"
@@ -384,9 +540,9 @@ export function Sales() {
                 </div>
               </div>
             ))}
-            {sales.length === 0 && (
+            {filteredSales.length === 0 && (
               <div className="p-8 text-center font-sans text-ink/70 border border-brass/30 bg-stone-light">
-                No sales logged yet.
+                {sales.length === 0 ? "No sales logged yet." : "No sales match the active filters."}
               </div>
             )}
           </div>
@@ -405,7 +561,7 @@ export function Sales() {
               </tr>
             </thead>
             <tbody>
-              {sales.map((sale) => (
+              {filteredSales.map((sale) => (
                 <tr
                   key={sale.id}
                   className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 font-mono cursor-pointer"
@@ -434,12 +590,14 @@ export function Sales() {
                   </td>
                 </tr>
               ))}
-              {sales.length === 0 && (
+              {filteredSales.length === 0 && (
                 <tr>
                   <td colSpan={8}>
                     <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
                       <ShoppingCart size={48} className="text-brass/20" />
-                      <p className="font-sans">No sales recorded today. Create your first invoice.</p>
+                      <p className="font-sans">
+                        {sales.length === 0 ? "No sales recorded today. Create your first invoice." : "No sales match the active filters."}
+                      </p>
                     </div>
                   </td>
                 </tr>
@@ -451,14 +609,26 @@ export function Sales() {
 
       <button 
         className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-turmeric text-ink rounded-full shadow-[2px_2px_0px_0px_rgba(20,32,26,1)] flex items-center justify-center z-30"
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={openCreateDrawer}
       >
         <Plus size={24} />
       </button>
 
       {/* Record Sale Form Drawer */}
-      <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setErrorMsg('');}} title="Record Sale">
+      <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setErrorMsg('');}} title={editingSale ? "Edit Sale" : "Record Sale"}>
         <form onSubmit={handleRecordSale} className="flex flex-col gap-6">
+          {/* Sale Date */}
+          <div className="space-y-2">
+            <label className="font-medium text-sm">Sale Date</label>
+            <Input 
+              type="date" 
+              value={transactionDate} 
+              onChange={(e) => setTransactionDate(e.target.value)} 
+              required 
+              className="font-mono"
+            />
+          </div>
+
           <div className="space-y-2">
             <label className="font-medium text-sm">Customer</label>
             <select 
@@ -527,7 +697,7 @@ export function Sales() {
           </div>
 
           <div className="space-y-2">
-            <label className="font-medium text-sm">Selling Rate (₹ per bag)</label>
+            <label className="font-medium text-sm">Selling Rate ({"\u20B9"} per bag)</label>
             <Input 
               type="number" 
               min="0.1" 
@@ -540,7 +710,7 @@ export function Sales() {
             />
             {rate && (
               <p className="text-xs font-mono text-ink/65 mt-1">
-                Calculated Rate: ₹{((Number(rate) || 0) / (Number(kgPerBag) || 26)).toFixed(2)} / kg
+                Calculated Rate: {"\u20B9"}{((Number(rate) || 0) / (Number(kgPerBag) || 26)).toFixed(2)} / kg
               </p>
             )}
           </div>
@@ -588,7 +758,7 @@ export function Sales() {
             {paymentStatus === 'PARTIAL' && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="font-medium text-sm">Amount Paid (₹)</label>
+                  <label className="font-medium text-sm">Amount Paid ({"\u20B9"})</label>
                   <input
                     type="number"
                     min="0"
@@ -616,9 +786,9 @@ export function Sales() {
                       const paid = Number(amtPaid) || 0
                       const remaining = computedTotal - paid
                       if (remaining <= 0) {
-                        return <span className="text-paddy">₹0 (Settle)</span>
+                        return <span className="text-paddy">{"\u20B9"}0 (Settle)</span>
                       }
-                      return <span className="text-ledger-red">₹{remaining.toLocaleString()}</span>
+                      return <span className="text-ledger-red">{"\u20B9"}{remaining.toLocaleString()}</span>
                     })()}
                   </div>
                 </div>
@@ -634,7 +804,7 @@ export function Sales() {
 
           <div className="bg-ink/5 p-4 border border-brass/20 flex justify-between items-center mt-auto">
             <span className="text-sm font-medium uppercase tracking-wider text-ink/70">Total Amount</span>
-            <span className="font-mono text-xl font-bold text-ink">₹{computedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="font-mono text-xl font-bold text-ink">{"\u20B9"}{computedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
           <div className="pt-4 border-t border-brass/20">
@@ -642,10 +812,10 @@ export function Sales() {
               {isRecording ? (
                 <>
                   <Loader2 className="animate-spin h-4 w-4" />
-                  <span>Recording...</span>
+                  <span>{editingSale ? 'Updating...' : 'Recording...'}</span>
                 </>
               ) : (
-                <span>Record Sale</span>
+                <span>{editingSale ? 'Save Changes' : 'Record Sale'}</span>
               )}
             </Button>
           </div>
@@ -653,7 +823,7 @@ export function Sales() {
       </Drawer>
 
       {/* Sale Detail Drawer */}
-      <SaleDetailDrawer saleId={selectedSaleId} onClose={() => setSelectedSaleId(null)} />
+      <SaleDetailDrawer saleId={selectedSaleId} onClose={() => setSelectedSaleId(null)} onEdit={startEditSale} />
     </div>
   )
 }

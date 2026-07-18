@@ -128,9 +128,14 @@ export function DrawerSection({ title, children }: { title: string; children: Re
 }
 
 /** Export/print action buttons row */
-export function DrawerActionBar({ onPrint, onDownload }: { onPrint?: () => void; onDownload?: () => void }) {
+export function DrawerActionBar({ onPrint, onDownload, onEdit }: { onPrint?: () => void; onDownload?: () => void; onEdit?: () => void }) {
   return (
     <div className="flex gap-2">
+      {onEdit && (
+        <button onClick={onEdit} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans font-medium border border-brass/40 text-ink hover:bg-turmeric/10 transition-colors rounded-sm">
+          Edit
+        </button>
+      )}
       {onPrint && (
         <button onClick={onPrint} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans font-medium border border-brass/40 text-ink/70 hover:bg-ink/5 transition-colors rounded-sm">
           <Printer size={13} /> Print

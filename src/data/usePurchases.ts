@@ -22,6 +22,9 @@ export interface Purchase {
   purchaseDate: string
   totalAmount: number
   paymentStatus: string
+  amountPaid?: number
+  paymentMethod?: string
+  paymentDate?: string | null
   supplier: {
     id: string
     name: string
@@ -68,16 +71,32 @@ export function usePurchases(page = 1, limit = 20) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['stock'] }) // stock reverts after delete
+      queryClient.invalidateQueries({ queryKey: ['varieties'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 
   const updatePurchaseStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: string }) => {
-      return await api.patch(`/purchases/${id}/status`, { paymentStatus: status })
+    mutationFn: async ({ id, status, amountPaid, paymentMethod, paymentDate }: { id: string, status: string, amountPaid?: number, paymentMethod?: string, paymentDate?: string | null }) => {
+      return await api.patch(`/purchases/${id}/status`, { paymentStatus: status, amountPaid, paymentMethod, paymentDate })
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+
+  const updatePurchaseMutation = useMutation({
+    mutationFn: async ({ id, purchaseData }: { id: string, purchaseData: any }) => {
+      return await api.put(`/purchases/${id}`, purchaseData)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      queryClient.invalidateQueries({ queryKey: ['purchase', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+      queryClient.invalidateQueries({ queryKey: ['varieties'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
@@ -89,7 +108,9 @@ export function usePurchases(page = 1, limit = 20) {
     error,
     addPurchase: (data: any) => addPurchaseMutation.mutateAsync(data),
     deletePurchase: (id: string) => deletePurchaseMutation.mutateAsync(id),
-    updateStatus: (id: string, status: string) => updatePurchaseStatusMutation.mutateAsync({ id, status }),
+    updateStatus: (id: string, status: string, amountPaid?: number, paymentMethod?: string, paymentDate?: string | null) => 
+      updatePurchaseStatusMutation.mutateAsync({ id, status, amountPaid, paymentMethod, paymentDate }),
+    updatePurchase: (id: string, purchaseData: any) => updatePurchaseMutation.mutateAsync({ id, purchaseData }),
   }
 }
 

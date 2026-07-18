@@ -89,6 +89,19 @@ export function useSales(page = 1, limit = 20) {
     },
   })
 
+  const updateSaleMutation = useMutation({
+    mutationFn: async ({ id, saleData }: { id: string, saleData: any }) => {
+      return await api.put(`/sales/${id}`, saleData)
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['sale', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+      queryClient.invalidateQueries({ queryKey: ['varieties'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+
   return {
     sales: data?.data || [],
     meta: data?.meta,
@@ -98,6 +111,7 @@ export function useSales(page = 1, limit = 20) {
     deleteSale: (id: string) => deleteSaleMutation.mutateAsync(id),
     updateStatus: (id: string, status: string, amountPaid?: number, paymentMethod?: string | null) => 
       updateSaleStatusMutation.mutateAsync({ id, status, amountPaid, paymentMethod }),
+    updateSale: (id: string, saleData: any) => updateSaleMutation.mutateAsync({ id, saleData }),
   }
 }
 

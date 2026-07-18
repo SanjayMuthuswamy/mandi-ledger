@@ -83,12 +83,18 @@ export const CreatePurchaseSchema = z.object({
     .enum(['PENDING', 'PARTIAL', 'PAID', 'OVERDUE'])
     .optional()
     .default('PENDING'),
+  amountPaid: z.number().nonnegative().optional().default(0),
+  paymentMethod: z.string().optional().nullable(),
+  paymentDate: z.string().datetime().or(z.string().date()).optional().nullable(),
   invoiceDoc: z.string().optional(),
   items: z.array(PurchaseItemSchema).min(1),
 })
 
 export const UpdatePurchaseStatusSchema = z.object({
   paymentStatus: z.enum(['PENDING', 'PARTIAL', 'PAID', 'OVERDUE']),
+  amountPaid: z.number().nonnegative().optional(),
+  paymentMethod: z.string().optional().nullable(),
+  paymentDate: z.string().datetime().or(z.string().date()).optional().nullable(),
 })
 
 // ── Sale ─────────────────────────────────────────────────────────────────────

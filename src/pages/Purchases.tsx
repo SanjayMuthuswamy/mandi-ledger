@@ -8,17 +8,22 @@ import { useVarieties } from "@/data/useVarieties"
 import { usePurchases, usePurchaseDetails } from "@/data/usePurchases"
 import { useSuppliers } from "@/data/useSuppliers"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus, Wheat, Loader2, Eye } from "lucide-react"
+import { Plus, Wheat, Loader2, Eye, Calendar } from "lucide-react"
 
-function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | null; onClose: () => void }) {
+function PurchaseDetailDrawer({ purchaseId, onClose, onEdit }: { purchaseId: string | null; onClose: () => void; onEdit: (purchase: any) => void }) {
   const { purchase, isLoading } = usePurchaseDetails(purchaseId)
   const { updateStatus } = usePurchases()
+  const { user } = useAuth()
   const [status, setStatus] = useState('')
+  const [amtPaid, setAmtPaid] = useState('')
+  const [method, setMethod] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     if (purchase) {
       setStatus(purchase.paymentStatus)
+      setAmtPaid(purchase.amountPaid?.toString() || '0')
+      setMethod(purchase.paymentMethod || '')
     }
   }, [purchase])
 
@@ -27,27 +32,31 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
     if (!purchase) return
     setIsUpdating(true)
     try {
-      await updateStatus(purchase.id, status)
-      alert("Payment status updated successfully.")
+      const paidVal = Number(amtPaid) || 0
+      await updateStatus(purchase.id, status, paidVal, method)
+      alert("Payment details updated successfully.")
     } catch (err: any) {
-      alert(err.data?.error || "Failed to update payment status.")
+      alert(err.data?.error || "Failed to update payment details.")
     } finally {
       setIsUpdating(false)
     }
   }
+
+  const balance = purchase ? (purchase.totalAmount - (purchase.amountPaid ?? 0)) : 0
 
   return (
     <DetailDrawer
       isOpen={!!purchaseId}
       onClose={onClose}
       title={purchase?.entryNo || "Purchase Details"}
-      subtitle={purchase ? `${purchase.purchaseDate?.split('T')[0]} · ${purchase.supplier?.name}` : undefined}
+      subtitle={purchase ? `${purchase.purchaseDate?.split('T')[0]} \u00B7 ${purchase.supplier?.name}` : undefined}
       actions={
         <DrawerActionBar 
           onDownload={() => {
             if (!purchase) return
             window.open(`/invoice.html?purchaseId=${purchase.id}`, '_blank')
           }}
+          onEdit={user?.role === 'ADMIN' ? () => onEdit(purchase) : undefined}
         />
       }
     >
@@ -63,18 +72,31 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
             <DetailRow label="Entry No." value={<span className="font-mono font-bold">{purchase.entryNo}</span>} />
             <DetailRow label="Purchase Date" value={purchase.purchaseDate?.split('T')[0]} />
             <DetailRow label="Payment Status" value={<StatusBadge status={purchase.paymentStatus} />} />
-            <DetailRow label="Total Amount" value={<span className="font-mono font-bold text-paddy">₹{purchase.totalAmount?.toLocaleString()}</span>} />
+            <DetailRow label="Total Amount" value={<span className="font-mono font-bold text-paddy">{"\u20B9"}{purchase.totalAmount?.toLocaleString()}</span>} />
+            <DetailRow label="Amount Paid" value={<span className="font-mono text-ink">{"\u20B9"}{(purchase.amountPaid ?? 0).toLocaleString()}</span>} />
+            <DetailRow label="Balance" value={<span className="font-mono text-ledger-red font-medium">{"\u20B9"}{balance.toLocaleString()}</span>} />
+            <DetailRow label="Payment Method" value={purchase.paymentMethod || '-'} />
+            <DetailRow label="Payment Date" value={purchase.paymentDate ? purchase.paymentDate.split('T')[0] : '-'} />
           </DrawerSection>
 
           {/* Update Payment Status */}
           <DrawerSection title="Update Payment Status">
             <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
-              <div className="flex gap-3 items-end">
-                <div className="flex-1 space-y-1">
+              <div className={status === 'PARTIAL' ? "grid grid-cols-2 gap-3" : "w-full"}>
+                <div className="space-y-1">
                   <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={(e) => {
+                      const newStatus = e.target.value
+                      setStatus(newStatus)
+                      if (newStatus === 'PAID') {
+                        setAmtPaid(purchase.totalAmount.toString())
+                      } else if (newStatus === 'PENDING' || newStatus === 'OVERDUE') {
+                        setAmtPaid('0')
+                        setMethod('')
+                      }
+                    }}
                     className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
                   >
                     <option value="PENDING">UNPAID</option>
@@ -83,10 +105,39 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
                     <option value="OVERDUE">OVERDUE</option>
                   </select>
                 </div>
-                <Button type="submit" disabled={isUpdating} className="h-9 px-4 text-xs font-medium uppercase tracking-wider">
-                  {isUpdating ? 'Saving...' : 'Update'}
-                </Button>
+                {status === 'PARTIAL' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid ({"\u20B9"})</label>
+                    <Input
+                      type="number"
+                      value={amtPaid}
+                      onChange={(e) => setAmtPaid(e.target.value)}
+                      className="h-9"
+                      placeholder="Enter amount"
+                    />
+                  </div>
+                )}
               </div>
+
+              {(status === 'PAID' || status === 'PARTIAL') && (
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
+                  <select
+                    value={method}
+                    onChange={(e) => setMethod(e.target.value)}
+                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                  >
+                    <option value="">Select Method</option>
+                    <option value="CASH">Cash</option>
+                    <option value="BANK_TRANSFER">Bank Transfer / UPI</option>
+                    <option value="CHEQUE">Cheque</option>
+                  </select>
+                </div>
+              )}
+
+              <Button type="submit" disabled={isUpdating} className="w-full h-9 text-xs font-medium uppercase tracking-wider">
+                {isUpdating ? 'Saving...' : 'Update Details'}
+              </Button>
             </form>
           </DrawerSection>
 
@@ -160,22 +211,93 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
 }
 
 export function Purchases() {
-  const { purchases, isLoading: isPurchasesLoading, addPurchase, deletePurchase } = usePurchases(1, 100)
+  const { purchases, isLoading: isPurchasesLoading, addPurchase, deletePurchase, updatePurchase } = usePurchases(1, 100)
   const { varieties, isLoading: isVarietiesLoading } = useVarieties()
   const { suppliers, isLoading: isSuppliersLoading } = useSuppliers(1, 100)
   const { user } = useAuth()
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
+  const [editingPurchase, setEditingPurchase] = useState<any | null>(null)
+  const [transactionDate, setTransactionDate] = useState('')
+
   const [selectedVariety, setSelectedVariety] = useState('')
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [quantity, setQuantity] = useState('')
   const [kgPerBag, setKgPerBag] = useState('26')
   const [rate, setRate] = useState('')
   const [paymentStatus, setPaymentStatus] = useState('PENDING')
+  const [amtPaid, setAmtPaid] = useState('0')
+  const [paymentMethod, setPaymentMethod] = useState('')
   const [isRecording, setIsRecording] = useState(false)
  
   const [errorMsg, setErrorMsg] = useState('')
+ 
+  const [filterStartDate, setFilterStartDate] = useState('')
+  const [filterEndDate, setFilterEndDate] = useState('')
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
+  const [filterSupplier, setFilterSupplier] = useState('')
+  const [filterVariety, setFilterVariety] = useState('')
+
+  const openCreateDrawer = () => {
+    setEditingPurchase(null)
+    setSelectedSupplier('')
+    setSelectedVariety('')
+    setQuantity('')
+    setKgPerBag('26')
+    setRate('')
+    setPaymentStatus('PENDING')
+    setAmtPaid('0')
+    setPaymentMethod('')
+    setTransactionDate(new Date().toISOString().split('T')[0])
+    setErrorMsg('')
+    setIsDrawerOpen(true)
+  }
+
+  const startEditPurchase = (purchase: any) => {
+    setEditingPurchase(purchase)
+    setSelectedSupplier(purchase.supplierId)
+    setSelectedVariety(purchase.items[0]?.riceVarietyId || '')
+    setQuantity(purchase.items[0]?.quantity.toString() || '')
+    setKgPerBag((purchase.items[0]?.kgPerBag ?? 26).toString())
+    setRate(purchase.items[0]?.rate.toString() || '')
+    setPaymentStatus(purchase.paymentStatus)
+    setAmtPaid(purchase.amountPaid?.toString() || '0')
+    setPaymentMethod(purchase.paymentMethod || '')
+    setTransactionDate(purchase.purchaseDate.split('T')[0])
+    setErrorMsg('')
+    setSelectedPurchaseId(null) // close details
+    setIsDrawerOpen(true) // open form
+  }
+
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter(purchase => {
+      const dateStr = purchase.purchaseDate.split('T')[0]
+      if (filterStartDate && dateStr < filterStartDate) return false
+      if (filterEndDate && dateStr > filterEndDate) return false
+
+      if (filterPaymentStatus && purchase.paymentStatus !== filterPaymentStatus) return false
+
+      if (filterSupplier && purchase.supplierId !== filterSupplier) return false
+
+      if (filterVariety) {
+        const hasVariety = purchase.items?.some(item => item.riceVarietyId === filterVariety)
+        if (!hasVariety) return false
+      }
+
+      return true
+    })
+  }, [purchases, filterStartDate, filterEndDate, filterPaymentStatus, filterSupplier, filterVariety])
+
+  const hasActiveFilters = !!(filterStartDate || filterEndDate || filterPaymentStatus || filterSupplier || filterVariety)
+
+  const clearFilters = () => {
+    setFilterStartDate('')
+    setFilterEndDate('')
+    setFilterPaymentStatus('')
+    setFilterSupplier('')
+    setFilterVariety('')
+  }
  
   const handleRecordPurchase = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -187,23 +309,37 @@ export function Purchases() {
     if (selectedVariety && selectedSupplier) {
       try {
         setIsRecording(true)
-        await addPurchase({
+        const finalAmtPaid = paymentStatus === 'PAID' ? computedTotal : (paymentStatus === 'PARTIAL' ? Number(amtPaid) : 0)
+        
+        const purchaseData = {
           supplierId: selectedSupplier,
-          purchaseDate: new Date().toISOString(),
+          purchaseDate: new Date(transactionDate).toISOString(),
           paymentStatus: paymentStatus,
+          amountPaid: finalAmtPaid,
+          paymentMethod: (paymentStatus === 'PARTIAL' || paymentStatus === 'PAID') ? paymentMethod : null,
           items: [{
             riceVarietyId: selectedVariety,
             quantity: qtyBags,
             kgPerBag: kgWeight,
             rate: Number(rate)
           }]
-        })
+        }
+
+        if (editingPurchase) {
+          await updatePurchase(editingPurchase.id, purchaseData)
+          alert("Purchase transaction updated successfully.")
+        } else {
+          await addPurchase(purchaseData)
+        }
         
         setIsDrawerOpen(false)
+        setEditingPurchase(null)
         setQuantity('')
         setRate('')
         setKgPerBag('26')
         setPaymentStatus('PENDING')
+        setAmtPaid('0')
+        setPaymentMethod('')
       } catch (err: any) {
         let msg = err.data?.error || "Failed to record purchase. Please try again."
         if (err.data?.issues) {
@@ -225,7 +361,7 @@ export function Purchases() {
       alert("Access Denied: Only Administrators can delete purchase records.")
       return
     }
-    const confirmed = window.confirm("Are you sure you want to delete this purchase? Stock will NOT be automatically reverted.")
+    const confirmed = window.confirm("Are you sure you want to delete this purchase? Stock will be automatically reverted.")
     if (confirmed) {
       deletePurchase(id)
     }
@@ -237,11 +373,88 @@ export function Purchases() {
   
   const computedTotal = (Number(quantity) || 0) * (Number(rate) || 0)
 
+  useEffect(() => {
+    if (paymentStatus === 'PAID') {
+      setAmtPaid(computedTotal.toString())
+    }
+  }, [computedTotal, paymentStatus])
+
   return (
     <div className="flex flex-col gap-8 pb-12">
       <div className="flex justify-between items-start">
         <StampHeader title="Purchases" />
-        <Button onClick={() => setIsDrawerOpen(true)} className="hidden md:flex">Record Purchase</Button>
+        <Button onClick={openCreateDrawer} className="hidden md:flex">Record Purchase</Button>
+      </div>
+
+      {/* Filters Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 bg-stone-light p-3 border border-brass/30 shadow-[2px_2px_0px_0px_rgba(140,111,62,0.2)] rounded-sm">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Date Range */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-stone border border-brass/30 rounded-sm font-mono text-xs text-ink/80 w-full md:w-auto">
+            <Calendar size={14} className="text-ink/50 shrink-0" />
+            <input 
+              type="date" 
+              value={filterStartDate} 
+              onChange={(e) => setFilterStartDate(e.target.value)} 
+              className="bg-transparent border-0 outline-none text-ink text-xs focus:ring-0 cursor-pointer p-0 w-full md:w-28 font-mono"
+              placeholder="Start Date"
+            />
+            <span className="text-ink/40 text-xs">to</span>
+            <input 
+              type="date" 
+              value={filterEndDate} 
+              onChange={(e) => setFilterEndDate(e.target.value)} 
+              className="bg-transparent border-0 outline-none text-ink text-xs focus:ring-0 cursor-pointer p-0 w-full md:w-28 font-mono"
+              placeholder="End Date"
+            />
+          </div>
+
+          {/* Payment Status Dropdown */}
+          <select
+            value={filterPaymentStatus}
+            onChange={(e) => setFilterPaymentStatus(e.target.value)}
+            className="flex-1 md:flex-initial h-8 px-2 bg-stone border border-brass/30 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric min-w-[130px]"
+          >
+            <option value="">All Payment Statuses</option>
+            <option value="PAID">PAID</option>
+            <option value="PENDING">UNPAID</option>
+            <option value="PARTIAL">PARTIAL</option>
+            <option value="OVERDUE">OVERDUE</option>
+          </select>
+
+          {/* Supplier Dropdown */}
+          <select
+            value={filterSupplier}
+            onChange={(e) => setFilterSupplier(e.target.value)}
+            className="flex-1 md:flex-initial h-8 px-2 bg-stone border border-brass/30 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric min-w-[140px]"
+          >
+            <option value="">All Suppliers</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+
+          {/* Rice Variety Dropdown */}
+          <select
+            value={filterVariety}
+            onChange={(e) => setFilterVariety(e.target.value)}
+            className="flex-1 md:flex-initial h-8 px-2 bg-stone border border-brass/30 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric min-w-[130px]"
+          >
+            <option value="">All Varieties</option>
+            {varieties.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="w-full md:w-auto h-8 px-3 bg-ledger-red text-stone text-xs uppercase font-bold hover:bg-ledger-red/80 rounded-sm font-sans transition-colors md:ml-auto"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {(isPurchasesLoading || isVarietiesLoading || isSuppliersLoading) ? (
@@ -251,7 +464,7 @@ export function Purchases() {
       ) : (
         <div className="bg-stone-light md:border md:border-brass/30 md:shadow-[4px_4px_0px_0px_rgba(140,111,62,0.2)] overflow-hidden">
           <div className="md:hidden flex flex-col gap-4 bg-stone pb-4">
-            {purchases.map(purchase => (
+            {filteredPurchases.map(purchase => (
               <div
                 key={purchase.id}
                 className="bg-stone-light border border-brass/30 p-4 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-brass transition-colors"
@@ -284,12 +497,14 @@ export function Purchases() {
                 </div>
               </div>
             ))}
-            {purchases.length === 0 && (
+            {filteredPurchases.length === 0 && (
               <div className="p-12 text-center flex flex-col items-center justify-center gap-4 bg-stone border border-brass/20">
                 <div className="w-16 h-16 rounded-full bg-ink/5 flex items-center justify-center">
                   <Wheat size={32} className="text-brass/40" />
                 </div>
-                <p className="font-sans text-ink/60 font-medium">No purchases logged yet.</p>
+                <p className="font-sans text-ink/60 font-medium">
+                  {purchases.length === 0 ? "No purchases logged yet." : "No purchases match the active filters."}
+                </p>
               </div>
             )}
           </div>
@@ -308,7 +523,7 @@ export function Purchases() {
               </tr>
             </thead>
             <tbody>
-              {purchases.map((purchase) => (
+              {filteredPurchases.map((purchase) => (
                 <tr
                   key={purchase.id}
                   className="border-b border-brass/20 border-dotted hover:bg-ink/5 transition-colors even:bg-stone/30 cursor-pointer"
@@ -337,12 +552,14 @@ export function Purchases() {
                   </td>
                 </tr>
               ))}
-              {purchases.length === 0 && (
+              {filteredPurchases.length === 0 && (
                 <tr>
                   <td colSpan={8}>
                     <div className="p-16 flex flex-col items-center justify-center gap-4 text-ink/50 bg-[#F8F9F3]">
                       <Wheat size={48} className="text-brass/20" />
-                      <p className="font-sans">No purchases recorded today. Record today's first purchase.</p>
+                      <p className="font-sans">
+                        {purchases.length === 0 ? "No purchases recorded today. Record today's first purchase." : "No purchases match the active filters."}
+                      </p>
                     </div>
                   </td>
                 </tr>
@@ -354,14 +571,26 @@ export function Purchases() {
 
       <button 
         className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-turmeric text-ink rounded-full shadow-[2px_2px_0px_0px_rgba(20,32,26,1)] flex items-center justify-center z-30"
-        onClick={() => setIsDrawerOpen(true)}
+        onClick={openCreateDrawer}
       >
         <Plus size={24} />
       </button>
 
       {/* Record Purchase Form Drawer */}
-      <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title="Record Purchase">
+      <Drawer isOpen={isDrawerOpen} onClose={() => {setIsDrawerOpen(false); setErrorMsg('');}} title={editingPurchase ? "Edit Purchase" : "Record Purchase"}>
         <form onSubmit={handleRecordPurchase} className="flex flex-col gap-6">
+          {/* Purchase Date */}
+          <div className="space-y-2">
+            <label className="font-medium text-sm">Purchase Date</label>
+            <Input 
+              type="date" 
+              value={transactionDate} 
+              onChange={(e) => setTransactionDate(e.target.value)} 
+              required 
+              className="font-mono"
+            />
+          </div>
+
           <div className="space-y-2">
             <label className="font-medium text-sm">Supplier</label>
             <select 
@@ -425,7 +654,7 @@ export function Purchases() {
           </div>
 
           <div className="space-y-2">
-            <label className="font-medium text-sm">Purchase Rate (₹ per bag)</label>
+            <label className="font-medium text-sm">Purchase Rate ({"\u20B9"} per bag)</label>
             <Input 
               type="number" 
               min="0.1" 
@@ -438,24 +667,90 @@ export function Purchases() {
             />
             {rate && (
               <p className="text-xs font-mono text-ink/65 mt-1">
-                Calculated Rate: ₹{((Number(rate) || 0) / (Number(kgPerBag) || 26)).toFixed(2)} / kg
+                Calculated Rate: {"\u20B9"}{((Number(rate) || 0) / (Number(kgPerBag) || 26)).toFixed(2)} / kg
               </p>
             )}
           </div>
 
           {/* Payment Details */}
-          <div className="space-y-2 border-t border-brass/10 pt-4">
-            <label className="font-medium text-sm">Payment Status</label>
-            <select
-              value={paymentStatus}
-              onChange={(e) => setPaymentStatus(e.target.value)}
-              className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
-            >
-              <option value="PENDING">UNPAID</option>
-              <option value="PARTIAL">PARTIAL</option>
-              <option value="PAID">PAID</option>
-              <option value="OVERDUE">OVERDUE</option>
-            </select>
+          <div className="space-y-4 border-t border-brass/10 pt-4">
+            <div className={paymentStatus === 'PARTIAL' ? "grid grid-cols-2 gap-3" : "w-full"}>
+              <div className="space-y-2">
+                <label className="font-medium text-sm">Payment Status</label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e) => {
+                    const newStatus = e.target.value
+                    setPaymentStatus(newStatus)
+                    if (newStatus === 'PAID') {
+                      setAmtPaid(computedTotal.toString())
+                    } else if (newStatus === 'PENDING' || newStatus === 'OVERDUE') {
+                      setAmtPaid('0')
+                      setPaymentMethod('')
+                    }
+                  }}
+                  className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+                >
+                  <option value="PENDING">UNPAID</option>
+                  <option value="PARTIAL">PARTIAL</option>
+                  <option value="PAID">PAID</option>
+                  <option value="OVERDUE">OVERDUE</option>
+                </select>
+              </div>
+
+              {paymentStatus === 'PARTIAL' && (
+                <div className="space-y-2">
+                  <label className="font-medium text-sm">Payment Method</label>
+                  <input
+                    type="text"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    placeholder="Cash, UPI, NEFT"
+                    className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric"
+                  />
+                </div>
+              )}
+            </div>
+
+            {paymentStatus === 'PARTIAL' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="font-medium text-sm">Amount Paid ({"\u20B9"})</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={computedTotal}
+                    step="0.01"
+                    value={amtPaid}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 0
+                      setAmtPaid(e.target.value)
+                      if (val >= computedTotal) {
+                        setPaymentStatus('PAID')
+                      } else if (val > 0 && val < computedTotal) {
+                        setPaymentStatus('PARTIAL')
+                      } else if (val === 0) {
+                        setPaymentStatus('PENDING')
+                      }
+                    }}
+                    className="flex h-10 w-full border border-brass/50 bg-stone/50 px-3 py-2 text-sm text-ink ring-offset-stone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-turmeric font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <span className="font-medium text-sm block">Remaining Balance</span>
+                  <div className="h-10 flex items-center px-1 font-mono text-sm font-bold">
+                    {(() => {
+                      const paid = Number(amtPaid) || 0
+                      const remaining = computedTotal - paid
+                      if (remaining <= 0) {
+                        return <span className="text-paddy">{"\u20B9"}0 (Settle)</span>
+                      }
+                      return <span className="text-ledger-red">{"\u20B9"}{remaining.toLocaleString()}</span>
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {errorMsg && (
@@ -466,7 +761,7 @@ export function Purchases() {
 
           <div className="bg-ink/5 p-4 border border-brass/20 flex justify-between items-center">
             <span className="text-sm font-medium uppercase tracking-wider text-ink/70">Total Amount</span>
-            <span className="font-mono text-xl font-bold text-ink">₹{computedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="font-mono text-xl font-bold text-ink">{"\u20B9"}{computedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
           <div className="pt-4 border-t border-brass/20">
@@ -474,10 +769,10 @@ export function Purchases() {
               {isRecording ? (
                 <>
                   <Loader2 className="animate-spin h-4 w-4" />
-                  <span>Recording...</span>
+                  <span>{editingPurchase ? 'Updating...' : 'Recording...'}</span>
                 </>
               ) : (
-                <span>Record Purchase</span>
+                <span>{editingPurchase ? 'Save Changes' : 'Record Purchase'}</span>
               )}
             </Button>
           </div>
@@ -485,7 +780,7 @@ export function Purchases() {
       </Drawer>
 
       {/* Purchase Detail Drawer */}
-      <PurchaseDetailDrawer purchaseId={selectedPurchaseId} onClose={() => setSelectedPurchaseId(null)} />
+      <PurchaseDetailDrawer purchaseId={selectedPurchaseId} onClose={() => setSelectedPurchaseId(null)} onEdit={startEditPurchase} />
     </div>
   )
 }

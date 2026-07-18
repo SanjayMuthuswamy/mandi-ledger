@@ -139,6 +139,9 @@ model Purchase {
   purchaseDate  DateTime
   totalAmount   Float
   paymentStatus PaymentStatus @default(PENDING)
+  amountPaid    Float         @default(0)
+  paymentMethod String?
+  paymentDate   DateTime?
   invoiceDoc    String?
 
   supplier      Supplier      @relation(fields: [supplierId], references: [id])

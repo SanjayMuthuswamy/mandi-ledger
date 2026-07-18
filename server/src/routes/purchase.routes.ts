@@ -23,3 +23,6 @@ purchaseRouter.patch(
 
 // DELETE /api/purchases/:id          – soft delete
 purchaseRouter.delete('/:id', asyncHandler(purchaseController.deletePurchase))
+
+// PUT    /api/purchases/:id          – update/edit purchase transaction
+purchaseRouter.put('/:id', asyncHandler(purchaseController.updatePurchase))
