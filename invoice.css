@@ -343,6 +343,13 @@ body {
   flex-shrink: 0;
 }
 
+.cust-detail span:not(.meta-label),
+.supply-detail span:not(.meta-label),
+.cust-address {
+  font-weight: 600;
+  color: var(--ink);
+}
+
 /* ═══════════════════════ ITEMS TABLE ════════════════════════════ */
 .items-section {
   margin-bottom: 5mm;
@@ -400,16 +407,18 @@ body {
 
 /* Column widths & alignment */
 .col-sno   { width: 28px;  text-align: center; }
-.col-name  { min-width: 80px; text-align: left; }
+.col-name  { min-width: 80px; text-align: left; font-weight: 600; }
 .col-desc  { min-width: 70px; text-align: left; font-size: var(--fs-xs); color: var(--ink-light); }
 .col-hsn   { width: 70px;  text-align: center; font-family: var(--font-mono); }
-.col-qty   { width: 42px;  text-align: right;  font-family: var(--font-mono); }
+.col-qty   { width: 42px;  text-align: right;  font-family: var(--font-mono); font-weight: 600; }
 .col-unit  { width: 38px;  text-align: center; }
 .col-rate  { width: 58px;  text-align: right;  font-family: var(--font-mono); font-weight: 600; }
 .col-disc  { width: 50px;  text-align: right;  font-family: var(--font-mono); }
 .col-gst   { width: 40px;  text-align: center; font-family: var(--font-mono); }
 .col-tax   { width: 58px;  text-align: right;  font-family: var(--font-mono); }
 .col-total { width: 64px;  text-align: right;  font-family: var(--font-mono); font-weight: 600; }
+.col-variety { font-weight: 600; }
+.col-invoice { font-family: var(--font-mono); font-weight: 600; }
 
 /* Item row sno cell */
 .items-table tbody td.col-sno {
