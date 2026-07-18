@@ -40,10 +40,10 @@ function CustomerDetailDrawer({ customerId, onClose, onEdit, onDelete, onViewHis
           {/* Profile */}
           <DrawerSection title="Customer Profile">
             <DetailRow label="Full Name" value={customer.name} />
-            <DetailRow label="Phone" value={customer.phone || '—'} />
-            <DetailRow label="Address" value={customer.address || '—'} />
-            <DetailRow label="Email" value={customer.email || '—'} />
-            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{customer.gstNumber || '—'}</span>} />
+            <DetailRow label="Phone" value={customer.phone || '-'} />
+            <DetailRow label="Address" value={customer.address || '-'} />
+            <DetailRow label="Email" value={customer.email || '-'} />
+            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{customer.gstNumber || '-'}</span>} />
           </DrawerSection>
 
           {/* Summary Stats */}

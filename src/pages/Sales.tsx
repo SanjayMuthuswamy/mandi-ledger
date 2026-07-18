@@ -50,17 +50,6 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
       subtitle={sale ? `${sale.saleDate?.split('T')[0]} · ${sale.customer?.name}` : undefined}
       actions={
         <DrawerActionBar 
-          onPrint={() => {
-            if (!sale) return
-            const printWindow = window.open(`/invoice.html?saleId=${sale.id}`, '_blank')
-            if (printWindow) {
-              printWindow.addEventListener('load', () => {
-                setTimeout(() => {
-                  printWindow.print()
-                }, 500)
-              })
-            }
-          }}
           onDownload={() => {
             if (!sale) return
             window.open(`/invoice.html?saleId=${sale.id}`, '_blank')
@@ -86,9 +75,9 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
           {/* Customer Details */}
           <DrawerSection title="Customer Details">
             <DetailRow label="Customer Name" value={sale.customer?.name} />
-            <DetailRow label="Phone" value={sale.customer?.phone || '—'} />
-            <DetailRow label="Address" value={sale.customer?.address || '—'} />
-            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{sale.customer?.gstNumber || '—'}</span>} />
+            <DetailRow label="Phone" value={sale.customer?.phone || '-'} />
+            <DetailRow label="Address" value={sale.customer?.address || '-'} />
+            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{sale.customer?.gstNumber || '-'}</span>} />
           </DrawerSection>
 
           {/* Items Purchased */}
@@ -225,15 +214,15 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
                 ₹{((sale.totalAmount ?? 0) - (sale.amountPaid ?? 0)).toLocaleString()}
               </span>
             } />
-            <DetailRow label="Payment Method" value={sale.paymentMethod || '—'} />
+            <DetailRow label="Payment Method" value={sale.paymentMethod || '-'} />
             <DetailRow label="Payment Status" value={<StatusBadge status={sale.paymentStatus} />} />
           </DrawerSection>
 
           {/* Metadata */}
           <DrawerSection title="Record Info">
             <DetailRow label="Record ID" value={<span className="font-mono text-xs text-ink/50">{sale.id}</span>} />
-            <DetailRow label="Created" value={sale.createdAt ? new Date(sale.createdAt).toLocaleString() : '—'} />
-            <DetailRow label="Last Updated" value={sale.updatedAt ? new Date(sale.updatedAt).toLocaleString() : '—'} />
+            <DetailRow label="Created" value={sale.createdAt ? new Date(sale.createdAt).toLocaleString() : '-'} />
+            <DetailRow label="Last Updated" value={sale.updatedAt ? new Date(sale.updatedAt).toLocaleString() : '-'} />
           </DrawerSection>
 
         </div>

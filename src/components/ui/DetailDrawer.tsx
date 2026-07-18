@@ -74,7 +74,7 @@ export function DetailRow({ label, value, mono = false, className = '' }: { labe
   return (
     <div className={`flex justify-between items-start py-2.5 border-b border-brass/10 last:border-0 ${className}`}>
       <span className="text-xs uppercase tracking-wider text-ink/50 font-sans font-semibold shrink-0 mr-4">{label}</span>
-      <span className={`text-sm text-ink font-medium text-right ${mono ? 'font-mono' : ''}`}>{value ?? '—'}</span>
+      <span className={`text-sm text-ink font-medium text-right ${mono ? 'font-mono' : ''}`}>{value ?? '-'}</span>
     </div>
   )
 }

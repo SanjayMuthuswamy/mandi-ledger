@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
+import { StatusBadge } from "@/components/ui/DetailDrawer"
 import { useStock } from "@/data/useStock"
 import { useSales } from "@/data/useSales"
 import { usePurchases } from "@/data/usePurchases"
@@ -9,27 +10,15 @@ import { Package, ShoppingCart, Wheat, Loader2, Download, Printer, Calendar } fr
 
 export function Reports() {
   const { stock, isLoading: isStockLoading } = useStock()
-  const { sales, isLoading: isSalesLoading, updateStatus: updateSaleStatus } = useSales(1, 100)
-  const { purchases, isLoading: isPurchasesLoading, updateStatus: updatePurchaseStatus } = usePurchases(1, 100)
+  const { sales, isLoading: isSalesLoading } = useSales(1, 100)
+  const { purchases, isLoading: isPurchasesLoading } = usePurchases(1, 100)
   const { summary, isLoading: isDashboardLoading } = useDashboard()
   
   const [activeReport, setActiveReport] = useState<'inventory' | 'sales' | 'purchases'>('inventory')
 
   const isLoading = isStockLoading || isSalesLoading || isPurchasesLoading || isDashboardLoading
 
-  const handleToggleStatus = async (type: 'sale' | 'purchase', id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'PAID' ? 'PENDING' : 'PAID'
-    const confirmed = window.confirm(`Are you sure you want to mark this ${type} as ${newStatus}?`)
-    if (!confirmed) return
 
-    try {
-      if (type === 'sale') await updateSaleStatus(id, newStatus)
-      else await updatePurchaseStatus(id, newStatus)
-    } catch (error) {
-      console.error('Failed to update status', error)
-      alert('Failed to update payment status.')
-    }
-  }
 
   const stockValue = stock.reduce((sum, item) => sum + (item.quantity * item.price), 0)
   const totalRevenue = summary?.kpis?.totalSaleValue || 0
@@ -175,12 +164,7 @@ export function Reports() {
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
                     <div className="font-mono text-lg font-bold text-ink">₹{item.totalAmount.toLocaleString()}</div>
-                    <button 
-                      onClick={() => handleToggleStatus('sale', item.id, item.paymentStatus)}
-                      className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-0.5 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20'}`}
-                    >
-                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
-                    </button>
+                    <StatusBadge status={item.paymentStatus} />
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-1">
@@ -199,12 +183,7 @@ export function Reports() {
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">
                     <div className="font-mono text-lg font-bold text-ink">₹{item.totalAmount.toLocaleString()}</div>
-                    <button 
-                      onClick={() => handleToggleStatus('purchase', item.id, item.paymentStatus)}
-                      className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-0.5 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20'}`}
-                    >
-                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
-                    </button>
+                    <StatusBadge status={item.paymentStatus} />
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-1">
@@ -279,12 +258,7 @@ export function Reports() {
                   <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
                   <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-center">
-                    <button 
-                      onClick={() => handleToggleStatus('sale', item.id, item.paymentStatus)}
-                      className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-1 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20 hover:bg-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20 hover:bg-turmeric/20'}`}
-                    >
-                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
-                    </button>
+                    <StatusBadge status={item.paymentStatus} />
                   </td>
                 </tr>
               ))}
@@ -298,12 +272,7 @@ export function Reports() {
                   <td className="p-4 text-right text-ink font-medium">{item.items[0]?.quantity} Bags ({item.items[0]?.kgPerBag ?? 26}kg)</td>
                   <td className="p-4 text-right font-medium text-ink">₹{item.totalAmount.toLocaleString()}</td>
                   <td className="p-4 text-center">
-                    <button 
-                      onClick={() => handleToggleStatus('purchase', item.id, item.paymentStatus)}
-                      className={`text-[10px] font-sans uppercase tracking-widest font-bold px-2 py-1 rounded-sm border transition-colors ${item.paymentStatus === 'PAID' ? 'text-paddy bg-paddy/10 border-paddy/20 hover:bg-paddy/20' : 'text-turmeric bg-turmeric/10 border-turmeric/20 hover:bg-turmeric/20'}`}
-                    >
-                      {item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus}
-                    </button>
+                    <StatusBadge status={item.paymentStatus} />
                   </td>
                 </tr>
               ))}

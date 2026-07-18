@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react"
 import { StampHeader } from "@/components/ui/StampHeader"
 import { Button } from "@/components/ui/Button"
 import { Drawer } from "@/components/ui/Drawer"
-import { DetailDrawer, DetailRow, StatusBadge, DrawerSection, DrawerActionBar } from "@/components/ui/DetailDrawer"
+import { DetailDrawer, DetailRow, StatusBadge, DrawerSection } from "@/components/ui/DetailDrawer"
 import { Input } from "@/components/ui/Input"
 import { useVarieties } from "@/data/useVarieties"
 import { usePurchases, usePurchaseDetails } from "@/data/usePurchases"
@@ -42,7 +42,6 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
       onClose={onClose}
       title={purchase?.entryNo || "Purchase Details"}
       subtitle={purchase ? `${purchase.purchaseDate?.split('T')[0]} · ${purchase.supplier?.name}` : undefined}
-      actions={<DrawerActionBar onPrint={() => window.print()} />}
     >
       {isLoading ? (
         <div className="flex justify-center p-16">
@@ -86,9 +85,9 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
           {/* Supplier Details */}
           <DrawerSection title="Supplier Details">
             <DetailRow label="Supplier Name" value={purchase.supplier?.name} />
-            <DetailRow label="Phone" value={purchase.supplier?.phone || '—'} />
-            <DetailRow label="Address" value={purchase.supplier?.address || '—'} />
-            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{purchase.supplier?.gstNumber || '—'}</span>} />
+            <DetailRow label="Phone" value={purchase.supplier?.phone || '-'} />
+            <DetailRow label="Address" value={purchase.supplier?.address || '-'} />
+            <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{purchase.supplier?.gstNumber || '-'}</span>} />
           </DrawerSection>
 
           {/* Items Purchased */}
@@ -140,8 +139,8 @@ function PurchaseDetailDrawer({ purchaseId, onClose }: { purchaseId: string | nu
           {/* Metadata */}
           <DrawerSection title="Record Info">
             <DetailRow label="Record ID" value={<span className="font-mono text-xs text-ink/50">{purchase.id}</span>} />
-            <DetailRow label="Created" value={purchase.createdAt ? new Date(purchase.createdAt).toLocaleString() : '—'} />
-            <DetailRow label="Last Updated" value={purchase.updatedAt ? new Date(purchase.updatedAt).toLocaleString() : '—'} />
+            <DetailRow label="Created" value={purchase.createdAt ? new Date(purchase.createdAt).toLocaleString() : '-'} />
+            <DetailRow label="Last Updated" value={purchase.updatedAt ? new Date(purchase.updatedAt).toLocaleString() : '-'} />
           </DrawerSection>
 
         </div>

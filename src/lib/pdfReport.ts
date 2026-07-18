@@ -158,7 +158,7 @@ export function generatePDFReport(config: ReportConfig) {
         `Rs. ${item.totalAmount.toLocaleString()}`,
         `Rs. ${paid.toLocaleString()}`,
         `Rs. ${balance.toLocaleString()}`,
-        item.paymentMethod || '—',
+        item.paymentMethod || '-',
         item.paymentStatus === 'PENDING' ? 'UNPAID' : item.paymentStatus
       ]
     })

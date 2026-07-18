@@ -5,7 +5,8 @@ import { Drawer } from "@/components/ui/Drawer"
 import { Input } from "@/components/ui/Input"
 import { useSuppliers, useSupplierDetails } from "@/data/useSuppliers"
 import { useAuth } from "@/contexts/AuthContext"
-import { Truck, Phone, MapPin, Plus, Loader2 } from "lucide-react"
+import { Truck, Phone, MapPin, Plus, Loader2, Download } from "lucide-react"
+import { generatePDFReport } from "@/lib/pdfReport"
 
 export function Suppliers() {
   const { suppliers, isLoading, addSupplier, deleteSupplier, updateSupplier } = useSuppliers(1, 100)
@@ -66,6 +67,28 @@ export function Suppliers() {
     }
   }
 
+  const handleDownloadPDF = () => {
+    if (!supplierDetails || !supplierDetails.purchases?.length) return
+    const data = supplierDetails.purchases.map((p: any) => ({
+      ...p,
+      supplier: { name: supplierDetails.name }
+    }))
+    const totalQty = supplierDetails.purchases.reduce((acc: number, p: any) => acc + (p.items?.[0]?.quantity || 0), 0)
+    const totalAmount = supplierDetails.purchases.reduce((acc: number, p: any) => acc + p.totalAmount, 0)
+
+    generatePDFReport({
+      title: `${supplierDetails.name} - Purchase History`,
+      type: 'Purchases',
+      dateRange: 'All Time',
+      data,
+      summary: {
+        totalRecords: supplierDetails.purchases.length,
+        totalQuantity: totalQty,
+        totalAmount
+      }
+    })
+  }
+
   if (selectedSupplier) {
     return (
       <div className="flex flex-col gap-8 pb-12">
@@ -91,6 +114,9 @@ export function Suppliers() {
                   <div className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-medium mb-2">Total Value Supplied</div>
                   <div className="font-mono text-2xl font-bold text-ink">₹{(supplierDetails?.purchases?.reduce((acc: number, p: any) => acc + p.totalAmount, 0) || 0).toLocaleString()}</div>
                   <div className="flex gap-2 mt-2">
+                    <Button variant="ghost" className="h-7 px-3 text-xs border border-brass/30 hover:bg-ink/5 flex items-center gap-1.5" onClick={handleDownloadPDF}>
+                      <Download size={13} /> DOWNLOAD REPORT
+                    </Button>
                     <Button variant="ghost" className="h-7 px-3 text-xs border border-brass/30 hover:bg-ink/5" onClick={() => { setSupplierToEdit(supplierDetails); setIsDrawerOpen(true); }}>EDIT</Button>
                     <Button variant="ghost" className="h-7 px-3 text-xs border border-ledger-red/30 text-ledger-red hover:bg-ledger-red/10" onClick={() => handleDeleteSupplier(supplierDetails.id)}>DELETE</Button>
                   </div>

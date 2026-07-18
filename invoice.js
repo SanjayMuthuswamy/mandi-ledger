@@ -13,13 +13,13 @@
 const defaultInvoiceData = {
   // Company
   company_logo:    "logo.png",
-  company_name:    "KRG Modern Rice Mills",
-  company_address: "356/3, Karumandamapalayam,\nMalayamapalayam PO\nErode, Tamil Nadu 638154",
-  company_phone:   "+91 98765 43210",
-  company_email:   "accounts@krgmills.com",
-  company_gstin:   "33AAHFK3755D1ZK",
-  company_pan:     "AAHFK3755D",
-  company_website: "www.krgmills.com",
+  company_name:    "MB BHARATH RICE MUNDY",
+  company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+  company_phone:   "+91 99942 80252, +91 95976 90100",
+  company_email:   "-",
+  company_gstin:   "-",
+  company_pan:     "-",
+  company_website: "-",
 
   // Invoice metadata
   invoice_number:  "INV-2023/24-1052",
@@ -383,7 +383,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   if (saleId) {
     try {
-      const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api' : '/api';
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const token = localStorage.getItem('accessToken');
       const headers = {};
       if (token) {
@@ -408,9 +408,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       const sale = await response.json();
       
       // Parse customer address for city and pin code
-      let customerAddress = sale.customer?.address || "—";
-      let customerCity = "—";
-      let customerPin = "—";
+      let customerAddress = sale.customer?.address || "-";
+      let customerCity = "-";
+      let customerPin = "-";
       
       const pinMatch = customerAddress.match(/\b\d{6}\b/);
       if (pinMatch) {
@@ -427,37 +427,37 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map sale fields to defaultInvoiceData shape
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "KRG Modern Rice Mills",
-        company_address: "356/3, Karumandamapalayam,\nMalayamapalayam PO\nErode, Tamil Nadu 638154",
-        company_phone:   "+91 98765 43210",
-        company_email:   "accounts@krgmills.com",
-        company_gstin:   "33AAHFK3755D1ZK",
-        company_pan:     "AAHFK3755D",
-        company_website: "www.krgmills.com",
+        company_name:    "MB BHARATH RICE MUNDY",
+        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_phone:   "+91 99942 80252, +91 95976 90100",
+        company_email:   "-",
+        company_gstin:   "-",
+        company_pan:     "-",
+        company_website: "-",
 
         // Invoice metadata
         invoice_number:  sale.invoiceNo,
         invoice_date:    new Date(sale.saleDate).toLocaleDateString('en-GB'),
         due_date:        new Date(sale.saleDate).toLocaleDateString('en-GB'),
-        vehicle_number:  sale.vehicleNo || "—",
-        payment_mode:    sale.paymentMethod || "—",
+        vehicle_number:  sale.vehicleNo || "-",
+        payment_mode:    sale.paymentMethod || "-",
         invoice_status:  sale.paymentStatus,
-        po_number:       "—",
+        po_number:       "-",
 
         // Customer
         customer_name:    sale.customer?.name,
-        customer_mobile:  sale.customer?.phone || "—",
+        customer_mobile:  sale.customer?.phone || "-",
         customer_address: customerAddress,
         customer_city:    customerCity,
-        customer_gstin:   sale.customer?.gstNumber || "—",
+        customer_gstin:   sale.customer?.gstNumber || "-",
         customer_state:   "Tamil Nadu (33)",
         customer_pin:     customerPin,
 
         // Supply details
         place_of_supply:  "Tamil Nadu (33)",
         reverse_charge:   "No",
-        transport_name:   "—",
-        delivery_note:    "—",
+        transport_name:   "-",
+        delivery_note:    "-",
 
         // Items
         items: (sale.items || []).map(item => ({

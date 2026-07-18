@@ -74,7 +74,7 @@ function StockDetailDrawer({ item, onClose, onEdit, onDelete }: {
         {/* Record Info */}
         <DrawerSection title="Record Info">
           <DetailRow label="Variety ID" value={<span className="font-mono text-xs text-ink/50">{item.varietyId}</span>} />
-          <DetailRow label="Last Updated" value={item.lastUpdated || '—'} />
+          <DetailRow label="Last Updated" value={item.lastUpdated || '-'} />
         </DrawerSection>
 
         {/* Actions */}
