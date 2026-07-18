@@ -81,8 +81,8 @@ body {
 /* ═══════════════════════ HEADER ════════════════════════════════ */
 .inv-header {
   display: grid;
-  grid-template-columns: 1.55fr auto 0.95fr;
-  gap: 6mm;
+  grid-template-columns: 1.45fr auto 1.15fr;
+  gap: 3mm;
   align-items: flex-start;
   padding-bottom: 5mm;
 }
@@ -196,7 +196,7 @@ body {
 .inv-meta-table th {
   font-weight: 600;
   color: var(--ink-light);
-  width: 95px;
+  width: 85px;
   white-space: nowrap;
 }
 

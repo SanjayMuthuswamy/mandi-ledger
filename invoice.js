@@ -13,11 +13,11 @@
 const defaultInvoiceData = {
   // Company
   company_logo:    "logo.png",
-  company_name:    "MB BHARATH RICE MANDI",
-  company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+  company_name:    "M B Bharath Rice Mundy",
+  company_address: "Merku Veethi,\nKongarpalayam, Gobi\nErode 638506\nTamil Nadu",
   company_phone:   "+91 99942 80252, +91 95976 90100",
   company_email:   "-",
-  company_gstin:   "-",
+  company_gstin:   "33BNZPM4466K1Z6",
   company_pan:     "-",
   company_website: "-",
 
@@ -634,11 +634,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map sale fields to defaultInvoiceData shape
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MANDI",
-        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_name:    "M B Bharath Rice Mundy",
+        company_address: "Merku Veethi,\nKongarpalayam, Gobi\nErode 638506\nTamil Nadu",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
-        company_gstin:   "-",
+        company_gstin:   "33BNZPM4466K1Z6",
         company_pan:     "-",
         company_website: "-",
 
@@ -752,11 +752,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map purchase fields to defaultInvoiceData shape
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MANDI",
-        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_name:    "M B Bharath Rice Mundy",
+        company_address: "Merku Veethi,\nKongarpalayam, Gobi\nErode 638506\nTamil Nadu",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
-        company_gstin:   "-",
+        company_gstin:   "33BNZPM4466K1Z6",
         company_pan:     "-",
         company_website: "-",
 
@@ -883,11 +883,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map to renderInvoice structure
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MANDI",
-        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_name:    "M B Bharath Rice Mundy",
+        company_address: "Merku Veethi,\nKongarpalayam, Gobi\nErode 638506\nTamil Nadu",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
-        company_gstin:   "-",
+        company_gstin:   "33BNZPM4466K1Z6",
         company_pan:     "-",
         company_website: "-",
 
@@ -990,11 +990,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map to renderInvoice structure
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MANDI",
-        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_name:    "M B Bharath Rice Mundy",
+        company_address: "Merku Veethi,\nKongarpalayam, Gobi\nErode 638506\nTamil Nadu",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
-        company_gstin:   "-",
+        company_gstin:   "33BNZPM4466K1Z6",
         company_pan:     "-",
         company_website: "-",
 
@@ -1137,11 +1137,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map to renderInvoice structure
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MANDI",
-        company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
+        company_name:    "M B Bharath Rice Mundy",
+        company_address: "Merku Veethi,\nKongarpalayam, Gobi\nErode 638506\nTamil Nadu",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
-        company_gstin:   "-",
+        company_gstin:   "33BNZPM4466K1Z6",
         company_pan:     "-",
         company_website: "-",
 
@@ -1174,7 +1174,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     downloadBtn.addEventListener('click', () => {
       const element = document.querySelector('.invoice-document');
       const docNo = document.getElementById('invoice-number')?.innerText || 'document';
-      const companyName = 'MB-BHARATH-RICE-MANDI';
+      const companyName = 'MB-BHARATH-RICE-MUNDY';
       const opt = {
         margin:       0,
         filename:     `${companyName}-${docNo}.pdf`,
