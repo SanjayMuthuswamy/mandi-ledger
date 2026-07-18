@@ -94,7 +94,7 @@ function LedgerIndex() {
       {/* Desktop Sidebar */}
       <nav className="hidden md:flex w-56 border-r border-brass/20 flex-col pt-8 pb-8 h-full bg-stone overflow-y-auto hide-scrollbar">
         <div className="px-8 mb-10 flex flex-col gap-3">
-          <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain bg-white rounded-md p-1 border border-brass/20" />
+          <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
           <h2 className="font-display text-ink uppercase tracking-tight text-xl drop-shadow-stamp origin-left inline-block">Ledger Index</h2>
         </div>
         <div className="flex-1 flex flex-col gap-1 pb-4">
