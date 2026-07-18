@@ -121,7 +121,7 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
           {/* Update Payment Details */}
           <DrawerSection title="Update Payment Status">
             <form onSubmit={handleUpdatePayment} className="space-y-4 pt-1">
-              <div className="grid grid-cols-2 gap-3">
+              <div className={(status === 'PARTIAL' || status === 'PAID') ? "grid grid-cols-2 gap-3" : "w-full"}>
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Status</label>
                   <select
@@ -131,8 +131,9 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
                       setStatus(newStatus)
                       if (newStatus === 'PAID') {
                         setAmtPaid(sale.totalAmount.toString())
-                      } else if (newStatus === 'PENDING') {
+                      } else if (newStatus === 'PENDING' || newStatus === 'OVERDUE') {
                         setAmtPaid('0')
+                        setMethod('')
                       }
                     }}
                     className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
@@ -143,55 +144,59 @@ function SaleDetailDrawer({ saleId, onClose }: { saleId: string | null; onClose:
                     <option value="OVERDUE">OVERDUE</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
-                  <input
-                    type="text"
-                    value={method}
-                    onChange={(e) => setMethod(e.target.value)}
-                    placeholder="Cash, UPI, NEFT"
-                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
-                  />
-                </div>
+                {(status === 'PARTIAL' || status === 'PAID') && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Payment Method</label>
+                    <input
+                      type="text"
+                      value={method}
+                      onChange={(e) => setMethod(e.target.value)}
+                      placeholder="Cash, UPI, NEFT"
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-sans text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid (₹)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max={sale.totalAmount}
-                    step="0.01"
-                    value={amtPaid}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0
-                      setAmtPaid(e.target.value)
-                      if (val >= sale.totalAmount) {
-                        setStatus('PAID')
-                      } else if (val > 0 && val < sale.totalAmount) {
-                        setStatus('PARTIAL')
-                      } else if (val === 0) {
-                        setStatus('PENDING')
-                      }
-                    }}
-                    className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold block">Remaining Balance</span>
-                  <div className="h-9 flex items-center px-1 font-mono text-xs font-bold">
-                    {(() => {
-                      const paid = Number(amtPaid) || 0
-                      const remaining = sale.totalAmount - paid
-                      if (remaining <= 0) {
-                        return <span className="text-paddy">₹0 (Settle)</span>
-                      }
-                      return <span className="text-ledger-red">₹{remaining.toLocaleString()}</span>
-                    })()}
+              {(status === 'PARTIAL' || status === 'PAID') && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold">Amount Paid (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={sale.totalAmount}
+                      step="0.01"
+                      value={amtPaid}
+                      onChange={(e) => {
+                        const val = Number(e.target.value) || 0
+                        setAmtPaid(e.target.value)
+                        if (val >= sale.totalAmount) {
+                          setStatus('PAID')
+                        } else if (val > 0 && val < sale.totalAmount) {
+                          setStatus('PARTIAL')
+                        } else if (val === 0) {
+                          setStatus('PENDING')
+                        }
+                      }}
+                      className="w-full h-9 px-2 bg-stone border border-brass/35 rounded-sm text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-turmeric"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-wider text-ink/50 font-sans font-bold block">Remaining Balance</span>
+                    <div className="h-9 flex items-center px-1 font-mono text-xs font-bold">
+                      {(() => {
+                        const paid = Number(amtPaid) || 0
+                        const remaining = sale.totalAmount - paid
+                        if (remaining <= 0) {
+                          return <span className="text-paddy">₹0 (Settle)</span>
+                        }
+                        return <span className="text-ledger-red">₹{remaining.toLocaleString()}</span>
+                      })()}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <Button
                 type="submit"

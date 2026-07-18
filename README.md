@@ -1,4 +1,4 @@
-# Ledger Noir — Rice Mandi ERP & Inventory System (v1.3.0)
+# Ledger Noir — Rice Mandi ERP & Inventory System (v1.3.1)
 
 A production-grade, ledger-inspired ERP and inventory management system designed specifically for grain mandi (market) and warehouse operations. 
 
