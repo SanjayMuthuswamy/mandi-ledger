@@ -204,7 +204,7 @@ export async function deletePurchase(req: Request, res: Response) {
       // 3. Revert stock (decrement stock since it was a purchase)
       for (const item of purchase.items) {
         const revertKg = item.quantity * item.kgPerBag
-        await tx.stock.update({
+        const updatedStock = await tx.stock.update({
           where: {
             warehouseId_riceVarietyId: {
               warehouseId: warehouse.id,
@@ -213,6 +213,11 @@ export async function deletePurchase(req: Request, res: Response) {
           },
           data: { quantity: { decrement: revertKg } },
         })
+
+        if (updatedStock.quantity < 0) {
+          const varietyName = await tx.riceVariety.findUnique({ where: { id: item.riceVarietyId } }).then(v => v?.name || 'variety')
+          throw new Error(`Insufficient stock of ${varietyName} in warehouse to delete this purchase. Current stock is ${(updatedStock.quantity + revertKg).toLocaleString()} kg, but need to revert ${revertKg.toLocaleString()} kg.`)
+        }
       }
 
       // 4. Create audit log entry
@@ -266,7 +271,9 @@ export async function updatePurchase(req: Request, res: Response) {
       }
 
       // 3. Revert old stock (decrement stock since it was a purchase)
+      const varietyIdsToCheck = new Set<string>()
       for (const item of existing.items) {
+        varietyIdsToCheck.add(item.riceVarietyId)
         const revertKg = item.quantity * item.kgPerBag
         await tx.stock.update({
           where: {
@@ -281,6 +288,7 @@ export async function updatePurchase(req: Request, res: Response) {
 
       // 4. Update new stock (increment stock)
       for (const item of body.items) {
+        varietyIdsToCheck.add(item.riceVarietyId)
         const incrementKg = item.quantity * (item.kgPerBag ?? 26)
         await tx.stock.upsert({
           where: {
@@ -297,6 +305,22 @@ export async function updatePurchase(req: Request, res: Response) {
             minThreshold: 1000,
           },
         })
+      }
+
+      // Verify that no stock ended up negative after update
+      for (const varietyId of varietyIdsToCheck) {
+        const stock = await tx.stock.findUnique({
+          where: {
+            warehouseId_riceVarietyId: {
+              warehouseId: warehouse.id,
+              riceVarietyId: varietyId,
+            },
+          },
+        })
+        if (stock && stock.quantity < 0) {
+          const varietyName = await tx.riceVariety.findUnique({ where: { id: varietyId } }).then(v => v?.name || 'variety')
+          throw new Error(`Insufficient stock of ${varietyName} in warehouse to complete this update. Resulting stock would be ${stock.quantity.toLocaleString()} kg (negative).`)
+        }
       }
 
       // 5. Delete old items
@@ -357,3 +381,4 @@ export async function updatePurchase(req: Request, res: Response) {
     res.status(500).json({ error: err.message || 'Failed to update purchase.' })
   }
 }
+

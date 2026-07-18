@@ -50,3 +50,4 @@ export async function deleteVariety(req: Request, res: Response) {
   })
   res.status(204).send()
 }
+

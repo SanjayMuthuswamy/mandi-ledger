@@ -11,3 +11,4 @@ riceVarietyRouter.post('/', asyncHandler(riceVarietyController.createVariety))
 riceVarietyRouter.get('/:id', asyncHandler(riceVarietyController.getVariety))
 riceVarietyRouter.put('/:id', asyncHandler(riceVarietyController.updateVariety))
 riceVarietyRouter.delete('/:id', asyncHandler(riceVarietyController.deleteVariety))
+

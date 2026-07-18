@@ -357,3 +357,4 @@ export async function updateSale(req: Request, res: Response) {
     res.status(err.statusCode || 500).json({ error: err.message || 'Failed to update sale.' })
   }
 }
+

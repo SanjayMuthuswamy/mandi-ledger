@@ -25,3 +25,4 @@ stockRouter.patch('/:id', asyncHandler(stockController.updateStockQuantity))
 
 // DELETE /api/stock/:id        – soft-delete not required for stock; hard delete
 stockRouter.delete('/:id', asyncHandler(stockController.deleteStock))
+

@@ -33,7 +33,7 @@ function Ticker() {
       <div className="shrink-0 pl-4 border-l border-brass/30 ml-4 flex items-center gap-4">
         <div className="hidden md:block text-right">
           <div className="font-display text-xl uppercase tracking-tighter text-stone">Mandi Board</div>
-          <div className="font-mono text-xs text-stone/50">v1.2.0</div>
+          <div className="font-mono text-xs text-stone/50">v1.3.2</div>
         </div>
         <div className="flex items-center gap-4 md:border-l md:border-brass/30 md:pl-4 md:ml-2">
           <Link to="/settings" className="text-stone hover:text-turmeric transition-colors" title="Settings">

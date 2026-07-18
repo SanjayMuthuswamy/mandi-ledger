@@ -26,3 +26,4 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
 export function verifyRefreshToken(token: string): { sub: string } {
   return jwt.verify(token, REFRESH_SECRET) as { sub: string }
 }
+

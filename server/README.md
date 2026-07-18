@@ -158,3 +158,4 @@ npm run db:reset     # Reset + reseed (destructive!)
 ## Changelog
 
 - **v1.3.1**: Standardized ERP document templates to use A4-compliant layout (`invoice.html`), resolved page height overflow in print stylesheet to prevent empty second page, and corrected spelling to "MB BHARATH RICE MANDI".
+

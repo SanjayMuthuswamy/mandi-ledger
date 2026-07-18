@@ -17,3 +17,4 @@ reportRouter.get('/top-suppliers', asyncHandler(reportController.topSuppliers))
 
 // GET /api/reports/top-customers?limit=5
 reportRouter.get('/top-customers', asyncHandler(reportController.topCustomers))
+

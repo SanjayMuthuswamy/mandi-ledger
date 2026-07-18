@@ -25,3 +25,4 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 logger.debug('Prisma client initialized')
+

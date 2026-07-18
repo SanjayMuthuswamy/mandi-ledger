@@ -48,3 +48,4 @@ export function errorHandler(
     stack: err instanceof Error ? err.stack : undefined
   })
 }
+

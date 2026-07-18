@@ -11,3 +11,4 @@ customerRouter.post('/', asyncHandler(customerController.createCustomer))
 customerRouter.get('/:id', asyncHandler(customerController.getCustomer))
 customerRouter.put('/:id', asyncHandler(customerController.updateCustomer))
 customerRouter.delete('/:id', asyncHandler(customerController.deleteCustomer))
+

@@ -11,3 +11,4 @@ userRouter.post('/', asyncHandler(userController.createUser))
 userRouter.get('/:id', asyncHandler(userController.getUser))
 userRouter.put('/:id', asyncHandler(userController.updateUser))
 userRouter.delete('/:id', asyncHandler(userController.deleteUser))
+

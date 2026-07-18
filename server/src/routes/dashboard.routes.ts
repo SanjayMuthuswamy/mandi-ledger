@@ -8,3 +8,4 @@ dashboardRouter.use(authenticate)
 
 // GET /api/dashboard/summary  – KPI cards + today's ledger entries
 dashboardRouter.get('/summary', asyncHandler(dashboardController.getSummary))
+

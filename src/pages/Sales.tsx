@@ -71,7 +71,7 @@ function SaleDetailDrawer({ saleId, onClose, onEdit }: { saleId: string | null; 
             <DetailRow label="Invoice No." value={<span className="font-mono font-bold">{sale.invoiceNo}</span>} />
             <DetailRow label="Sale Date" value={sale.saleDate?.split('T')[0]} />
             <DetailRow label="Payment Status" value={<StatusBadge status={sale.paymentStatus} />} />
-            <DetailRow label="Total Amount" value={<span className="font-mono font-bold text-paddy">₹{sale.totalAmount?.toLocaleString()}</span>} />
+            <DetailRow label="Total Amount" value={<span className="font-mono font-bold text-paddy">{"\u20B9"}{sale.totalAmount?.toLocaleString()}</span>} />
           </DrawerSection>
 
           {/* Customer Details */}
@@ -82,8 +82,8 @@ function SaleDetailDrawer({ saleId, onClose, onEdit }: { saleId: string | null; 
             <DetailRow label="GSTIN" value={<span className="font-mono text-xs">{sale.customer?.gstNumber || '-'}</span>} />
           </DrawerSection>
 
-          {/* Items Purchased */}
-          <DrawerSection title="Items Purchased">
+          {/* Items Sold */}
+          <DrawerSection title="Items Sold">
             {sale.items?.map((item: any, i: number) => (
               <div key={item.id || i} className="border border-brass/20 rounded-sm p-3 mb-2 last:mb-0 bg-stone/30">
                 <div className="flex items-center gap-2 mb-2">
@@ -105,15 +105,15 @@ function SaleDetailDrawer({ saleId, onClose, onEdit }: { saleId: string | null; 
                   </div>
                   <div>
                     <div className="text-ink/50 uppercase text-[10px]">Rate / Bag</div>
-                    <div className="font-bold text-ink">₹{item.rate?.toFixed(2)}</div>
+                    <div className="font-bold text-ink">{"\u20B9"}{item.rate?.toFixed(2)}</div>
                   </div>
                   <div>
                     <div className="text-ink/50 uppercase text-[10px]">Rate / Kg</div>
-                    <div className="font-bold text-ink">₹{((item.rate ?? 0) / (item.kgPerBag ?? 26)).toFixed(2)}</div>
+                    <div className="font-bold text-ink">{"\u20B9"}{((item.rate ?? 0) / (item.kgPerBag ?? 26)).toFixed(2)}</div>
                   </div>
                   <div>
                     <div className="text-ink/50 uppercase text-[10px]">Item Total</div>
-                    <div className="font-bold text-paddy">₹{((item.quantity ?? 0) * (item.rate ?? 0)).toLocaleString()}</div>
+                    <div className="font-bold text-paddy">{"\u20B9"}{((item.quantity ?? 0) * (item.rate ?? 0)).toLocaleString()}</div>
                   </div>
                 </div>
               </div>

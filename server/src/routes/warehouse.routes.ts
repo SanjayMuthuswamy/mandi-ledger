@@ -11,3 +11,4 @@ warehouseRouter.post('/', asyncHandler(warehouseController.createWarehouse))
 warehouseRouter.get('/:id', asyncHandler(warehouseController.getWarehouse))
 warehouseRouter.put('/:id', asyncHandler(warehouseController.updateWarehouse))
 warehouseRouter.delete('/:id', asyncHandler(warehouseController.deleteWarehouse))
+

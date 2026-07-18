@@ -20,3 +20,4 @@ supplierRouter.put('/:id', asyncHandler(supplierController.updateSupplier))
 
 // DELETE /api/suppliers/:id          – soft delete
 supplierRouter.delete('/:id', asyncHandler(supplierController.deleteSupplier))
+

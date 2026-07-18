@@ -281,3 +281,4 @@ export async function topCustomers(req: Request, res: Response) {
 
   res.json(top)
 }
+

@@ -158,3 +158,4 @@ mandi-ledger/
 * **Mandi Brass (`#8C6F3E`):** Golden accents and dividers representing polished brass scales.
 * **Ledger Red (`#A6362C`):** High-priority alerts and void actions.
 * **Paddy Green (`#4C6B3F`):** Standard color for successful transactions and healthy stock metrics.
+

@@ -19,3 +19,4 @@ authRouter.post('/logout', authenticate, asyncHandler(authController.logout))
 
 // GET  /api/auth/me
 authRouter.get('/me', authenticate, asyncHandler(authController.me))
+

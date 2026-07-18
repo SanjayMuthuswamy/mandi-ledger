@@ -76,3 +76,4 @@ export async function deleteUser(req: Request, res: Response) {
   })
   res.status(204).send()
 }
+

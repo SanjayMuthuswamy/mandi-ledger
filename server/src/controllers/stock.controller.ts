@@ -152,3 +152,4 @@ export async function deleteStock(req: Request, res: Response) {
   await prisma.stock.delete({ where: { id: String(req.params.id) } })
   res.status(204).send()
 }
+
