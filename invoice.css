@@ -81,7 +81,7 @@ body {
 /* ═══════════════════════ HEADER ════════════════════════════════ */
 .inv-header {
   display: grid;
-  grid-template-columns: 1.05fr auto 1fr;
+  grid-template-columns: 1.55fr auto 0.95fr;
   gap: 6mm;
   align-items: flex-start;
   padding-bottom: 5mm;
