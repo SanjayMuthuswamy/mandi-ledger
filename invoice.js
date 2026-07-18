@@ -13,7 +13,7 @@
 const defaultInvoiceData = {
   // Company
   company_logo:    "logo.png",
-  company_name:    "MB BHARATH RICE MUNDY",
+  company_name:    "MB BHARATH RICE MANDI",
   company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
   company_phone:   "+91 99942 80252, +91 95976 90100",
   company_email:   "-",
@@ -459,7 +459,7 @@ function renderInvoice(data) {
       } else {
         hideIfEmpty('discount-row', '');
       }
-
+      
       const isInterstate = (data.place_of_supply || '').toLowerCase().indexOf('33') === -1 ||
                            (data.customer_gstin || '').substring(0, 2) !== '33';
       if (isInterstate) {
@@ -625,7 +625,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map sale fields to defaultInvoiceData shape
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MUNDY",
+        company_name:    "MB BHARATH RICE MANDI",
         company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
@@ -743,7 +743,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map purchase fields to defaultInvoiceData shape
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MUNDY",
+        company_name:    "MB BHARATH RICE MANDI",
         company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
@@ -874,7 +874,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map to renderInvoice structure
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MUNDY",
+        company_name:    "MB BHARATH RICE MANDI",
         company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
@@ -981,7 +981,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map to renderInvoice structure
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MUNDY",
+        company_name:    "MB BHARATH RICE MANDI",
         company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",
@@ -1128,7 +1128,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Map to renderInvoice structure
       const invoiceData = {
         company_logo:    "logo.png",
-        company_name:    "MB BHARATH RICE MUNDY",
+        company_name:    "MB BHARATH RICE MANDI",
         company_address: "Kongarpalayam, Gobi.\nPin code: 638 506",
         company_phone:   "+91 99942 80252, +91 95976 90100",
         company_email:   "-",

@@ -10,6 +10,7 @@ import { Truck, Phone, MapPin, Plus, Loader2, Download } from "lucide-react"
 export function Suppliers() {
   const { suppliers, isLoading, addSupplier, deleteSupplier, updateSupplier } = useSuppliers(1, 100)
   const { user } = useAuth()
+  
   const [view, setView] = useState<'cards' | 'list'>('cards')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
