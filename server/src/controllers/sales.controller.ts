@@ -69,7 +69,7 @@ export async function createSale(req: Request, res: Response) {
     // Check stock availability for each item and deduct atomically
     const warehouse = await tx.warehouse.findFirst()
     if (!warehouse) {
-      throw new Error('No warehouse configured. Please add a warehouse first.')
+      throw Object.assign(new Error('No warehouse configured. Please create a Warehouse in Settings first.'), { statusCode: 400 })
     }
 
     for (const item of body.items) {
@@ -203,7 +203,7 @@ export async function deleteSale(req: Request, res: Response) {
       // 2. Find warehouse
       const warehouse = await tx.warehouse.findFirst()
       if (!warehouse) {
-        throw new Error('No warehouse configured. Cannot revert stock.')
+        throw Object.assign(new Error('No warehouse configured. Cannot revert stock.'), { statusCode: 400 })
       }
 
       // 3. Revert stock (increment stock since it was a sale)
@@ -267,7 +267,7 @@ export async function updateSale(req: Request, res: Response) {
       // 2. Find warehouse
       const warehouse = await tx.warehouse.findFirst()
       if (!warehouse) {
-        throw new Error('No warehouse configured. Cannot update stock.')
+        throw Object.assign(new Error('No warehouse configured. Cannot update stock.'), { statusCode: 400 })
       }
 
       // 3. Revert old stock (increment since it was a sale)

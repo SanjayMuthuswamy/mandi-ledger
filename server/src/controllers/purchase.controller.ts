@@ -117,7 +117,7 @@ export async function createPurchase(req: Request, res: Response) {
     // Update stock for each purchased item (default warehouse strategy: first warehouse)
     const warehouse = await tx.warehouse.findFirst()
     if (!warehouse) {
-      throw new Error('No warehouse configured. Please add a warehouse first.')
+      throw Object.assign(new Error('No warehouse configured. Please create a Warehouse in Settings first.'), { statusCode: 400 })
     }
 
     for (const item of body.items) {
@@ -211,7 +211,7 @@ export async function deletePurchase(req: Request, res: Response) {
       // 2. Find warehouse
       const warehouse = await tx.warehouse.findFirst()
       if (!warehouse) {
-        throw new Error('No warehouse configured. Cannot revert stock.')
+        throw Object.assign(new Error('No warehouse configured. Cannot revert stock.'), { statusCode: 400 })
       }
 
       // 3. Revert stock (decrement stock since it was a purchase)
@@ -229,7 +229,10 @@ export async function deletePurchase(req: Request, res: Response) {
 
         if (updatedStock.quantity < 0) {
           const varietyName = await tx.riceVariety.findUnique({ where: { id: item.riceVarietyId } }).then(v => v?.name || 'variety')
-          throw new Error(`Insufficient stock of ${varietyName} in warehouse to delete this purchase. Current stock is ${(updatedStock.quantity + revertKg).toLocaleString()} kg, but need to revert ${revertKg.toLocaleString()} kg.`)
+          throw Object.assign(
+            new Error(`Insufficient stock of ${varietyName} in warehouse to delete this purchase. Current stock is ${(updatedStock.quantity + revertKg).toLocaleString()} kg, but need to revert ${revertKg.toLocaleString()} kg.`),
+            { statusCode: 422 }
+          )
         }
       }
 
@@ -280,7 +283,7 @@ export async function updatePurchase(req: Request, res: Response) {
       // 2. Find warehouse
       const warehouse = await tx.warehouse.findFirst()
       if (!warehouse) {
-        throw new Error('No warehouse configured. Cannot update stock.')
+        throw Object.assign(new Error('No warehouse configured. Cannot update stock.'), { statusCode: 400 })
       }
 
       // 3. Revert old stock (decrement stock since it was a purchase)
@@ -332,7 +335,10 @@ export async function updatePurchase(req: Request, res: Response) {
         })
         if (stock && stock.quantity < 0) {
           const varietyName = await tx.riceVariety.findUnique({ where: { id: varietyId } }).then(v => v?.name || 'variety')
-          throw new Error(`Insufficient stock of ${varietyName} in warehouse to complete this update. Resulting stock would be ${stock.quantity.toLocaleString()} kg (negative).`)
+          throw Object.assign(
+            new Error(`Insufficient stock of ${varietyName} in warehouse to complete this update. Resulting stock would be ${stock.quantity.toLocaleString()} kg (negative).`),
+            { statusCode: 422 }
+          )
         }
       }
 

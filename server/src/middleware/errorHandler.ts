@@ -39,6 +39,12 @@ export function errorHandler(
     return
   }
 
+  // Custom operational/business logic errors (with statusCode attached)
+  if (err instanceof Error && 'statusCode' in err) {
+    res.status((err as any).statusCode).json({ error: err.message })
+    return
+  }
+
   // Generic server error
   logger.error(err, 'Unhandled error')
   console.error('Unhandled error:', err)

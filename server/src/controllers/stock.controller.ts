@@ -40,9 +40,15 @@ export async function createStock(req: Request, res: Response) {
 
   if (isLegacy) {
     const warehouse = await prisma.warehouse.findFirst()
-    if (!warehouse) throw new Error("No warehouse configured")
+    if (!warehouse) {
+      res.status(400).json({ error: "No warehouse configured. Please create a Warehouse in Settings first." })
+      return
+    }
     const variety = await prisma.riceVariety.findUnique({ where: { code: req.body.varietyId } })
-    if (!variety) throw new Error("Variety not found")
+    if (!variety) {
+      res.status(400).json({ error: `Rice variety with code '${req.body.varietyId}' not found. Please add this variety in Settings first.` })
+      return
+    }
     
     const entry = await prisma.stock.upsert({
       where: {
