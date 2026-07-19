@@ -156,6 +156,25 @@ function hideIfEmpty(rowId, value) {
   if (el && !value) el.classList.add('hidden');
 }
 
+// ── Helper: show error screen ────────────────────────────────────────────────
+function showErrorScreen(message) {
+  const docElement = document.querySelector('.invoice-wrapper');
+  if (docElement) {
+    docElement.innerHTML = `
+      <div style="max-width: 600px; margin: 80px auto; padding: 40px; text-align: center; background: #FAF9F5; border: 1px solid #D9383A; border-radius: 4px; font-family: 'Inter', sans-serif; box-shadow: 4px 4px 0px 0px rgba(217, 56, 58, 0.2);">
+        <div style="font-size: 48px; margin-bottom: 20px; color: #D9383A;">⚠️</div>
+        <h2 style="font-size: 20px; font-weight: 700; color: #D9383A; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Failed to Load Document</h2>
+        <p style="font-size: 14px; color: rgba(20, 32, 26, 0.7); line-height: 1.5; margin-bottom: 24px;">${message}</p>
+        <button onclick="window.close()" style="background: #D9383A; color: #FAF9F5; border: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; border-radius: 2px; transition: background 0.2s;">Close Window</button>
+      </div>
+    `;
+  }
+  const toolbar = document.querySelector('.invoice-toolbar');
+  if (toolbar) {
+    toolbar.style.display = 'none';
+  }
+}
+
 // ── renderInvoice() ──────────────────────────────────────────────────────────
 // Existing field IDs are unchanged. New IDs map to the new HTML sections.
 function renderInvoice(data) {
@@ -692,8 +711,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       renderInvoice(invoiceData);
     } catch (err) {
       console.error(err);
-      alert('Error loading invoice: ' + err.message);
-      renderInvoice(defaultInvoiceData);
+      showErrorScreen('Error loading invoice: ' + err.message);
     }
   } else if (purchaseId) {
     try {
@@ -809,8 +827,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       renderInvoice(invoiceData);
     } catch (err) {
       console.error(err);
-      alert('Error loading purchase record: ' + err.message);
-      renderInvoice(defaultInvoiceData);
+      showErrorScreen('Error loading purchase record: ' + err.message);
     }
   } else if (customerId) {
     try {
@@ -916,8 +933,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       renderInvoice(invoiceData);
     } catch (err) {
       console.error(err);
-      alert('Error loading customer report: ' + err.message);
-      renderInvoice(defaultInvoiceData);
+      showErrorScreen('Error loading customer report: ' + err.message);
     }
   } else if (supplierId) {
     try {
@@ -1023,8 +1039,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       renderInvoice(invoiceData);
     } catch (err) {
       console.error(err);
-      alert('Error loading supplier report: ' + err.message);
-      renderInvoice(defaultInvoiceData);
+      showErrorScreen('Error loading supplier report: ' + err.message);
     }
   } else if (reportType) {
     try {
@@ -1161,11 +1176,25 @@ window.addEventListener('DOMContentLoaded', async () => {
       renderInvoice(invoiceData);
     } catch (err) {
       console.error(err);
-      alert('Error loading report: ' + err.message);
-      renderInvoice(defaultInvoiceData);
+      showErrorScreen('Error loading report: ' + err.message);
     }
   } else {
-    renderInvoice(defaultInvoiceData);
+    // If no document ID or report type is specified, show an informative empty state instead of dummy/demo data
+    const docElement = document.querySelector('.invoice-wrapper');
+    if (docElement) {
+      docElement.innerHTML = `
+        <div style="max-width: 600px; margin: 80px auto; padding: 40px; text-align: center; background: #FAF9F5; border: 1px solid #8C6F3E; border-radius: 4px; font-family: 'Inter', sans-serif; box-shadow: 4px 4px 0px 0px rgba(140, 111, 62, 0.2);">
+          <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+          <h2 style="font-size: 20px; font-weight: 700; color: #14201A; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">No Document Loaded</h2>
+          <p style="font-size: 14px; color: rgba(20, 32, 26, 0.7); line-height: 1.5; margin-bottom: 24px;">This viewer is intended to display dynamic tax invoices, purchase records, or ledger reports generated from the Mandi Ledger application.</p>
+          <button onclick="window.close()" style="background: #8C6F3E; color: #FAF9F5; border: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; border-radius: 2px; transition: background 0.2s;">Close Window</button>
+        </div>
+      `;
+    }
+    const toolbar = document.querySelector('.invoice-toolbar');
+    if (toolbar) {
+      toolbar.style.display = 'none';
+    }
   }
 
   // Set up download PDF action
