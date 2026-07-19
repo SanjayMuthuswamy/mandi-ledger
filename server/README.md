@@ -1,6 +1,12 @@
-# Mandi Ledger - Backend API
+# Mandi Ledger - Backend API (v1.3.2)
 
 Express 5 + TypeScript + Prisma 7 + PostgreSQL backend for the Ledger Noir rice mandi inventory system.
+
+## Live Production Links
+
+* **Frontend UI (Vercel):** [https://mandi-ledger.vercel.app](https://mandi-ledger.vercel.app)
+* **Backend API (Render):** [https://mandi-ledger-backend.onrender.com/api](https://mandi-ledger-backend.onrender.com/api)
+* **Database (Supabase):** PostgreSQL database powered by Supabase with connection pooling.
 
 ## Tech Stack
 
@@ -170,4 +176,5 @@ npm run db:reset     # Reset + reseed (destructive!)
 
 ## Changelog
 
+- **v1.3.2**: Removed all dummy/sample data from database seeds and initialized stock values to 0; refactored HTML invoice viewer logic to display professional empty/error screens in place of hardcoded placeholder fallbacks.
 - **v1.3.1**: Standardized ERP document templates to use A4-compliant layout (`invoice.html`), resolved page height overflow in print stylesheet to prevent empty second page, and corrected spelling to "MB BHARATH RICE MANDI".
